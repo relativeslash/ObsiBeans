@@ -1,13 +1,13 @@
 ---
 # OB-77pl
 title: V1 foundation and compatibility contracts
-status: todo
+status: in-progress
 type: epic
 priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:42Z
-updated_at: 2026-10-26T01:45:43Z
+updated_at: 2026-10-26T18:12:47Z
 parent: OB-fgjv
 blocked_by:
     - OB-hup8

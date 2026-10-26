@@ -112,6 +112,8 @@ ESLint applies `strictTypeChecked` to TypeScript and JavaScript. Svelte markup i
 
 `.github/workflows/ci.yml` runs install, `yarn verify` and `yarn build` on Node 24.22.1 for pushes to `main` and for pull requests. Actions are pinned by commit.
 
+The repository ruleset `Default PR only` on the default branch `main` blocks direct pushes, force pushes and deletion, so changes land only through pull requests. The `verify` job is a required status check, and the pull request branch must be up to date with `main` before merging. The ruleset has no bypass actors. Only the repository owner can change it.
+
 ## Selected standard profiles
 
 TypeScript baseline everywhere. `Typescript/browser` applies to `src/`, which runs in Obsidian's Electron renderer. `Typescript/node` applies to `src/adapter/` (process execution) and to `tools/` and `test/native/` (Node scripts). The `web-app` profile does not apply: the design rules out a standalone web-app stack.
