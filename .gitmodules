@@ -1,0 +1,3 @@
+[submodule "docs/Private/Contributing/Standards"]
+	path = docs/Private/Contributing/Standards
+	url = git@github.com:Protomatter-Studio/Standards.git
