@@ -4,6 +4,7 @@
     "cssclasses": "multitext",
     "tags": "tags",
     "timestamp": "datetime",
-    "draft": "number"
+    "draft": "number",
+    "updated_at": "text"
   }
 }

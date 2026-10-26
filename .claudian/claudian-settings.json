@@ -9,7 +9,7 @@
   "titleGenerationModel": "openai-codex/gpt-6-astra",
   "excludedTags": [],
   "mediaFolder": "",
-  "systemPrompt": "Always start with reading AGENTS.md",
+  "systemPrompt": "Start by reading AGENTS.md",
   "sharedEnvironmentVariables": "",
   "envSnippets": [],
   "customContextLimits": {},
@@ -317,8 +317,8 @@
   },
   "settingsProvider": "claude",
   "lastSelectedChatModel": {
-    "providerId": "claude",
-    "model": "opus"
+    "providerId": "codex",
+    "model": "openai-codex/gpt-6-astra"
   },
   "savedProviderModel": {
     "grok": "grok/grok-4.7"
