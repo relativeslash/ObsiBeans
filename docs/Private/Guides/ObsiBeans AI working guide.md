@@ -32,6 +32,8 @@ A plugin skeleton with quality gates exists: a workspace view, an open command a
 
 Before writing adapter, state, or view code, read [[docs/Private/Design/Beans 0.4.2 contract.md|the Beans 0.4.2 contract]]. The plugin depends on several non-obvious behaviors recorded there: queried ETags can be rejected, updates drop unknown frontmatter, GraphQL validates no field values, and blocking links are stored in two directions. For view and keyboard work, also read [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md|the TUI parity matrix]]. Never run experiments against this repository's own tracker; the audit script shows how to use a temporary project.
 
+Process and project binding live in `src/adapter/`: the plugin shell constructs one `ProcessRunner` and passes it to `bindProject`, `runBeans` and `scanTaskRoot`. Never call `child_process` elsewhere. Adapter tests use Node scripts as fake executables (`test/support/project.ts`) and need no Beans install; the release-binary tests need `OBSIBEANS_BEANS_RELEASE`, described in [[docs/Private/Contributing/ObsiBeans project info.md|project information]]. A `go install` build of Beans reports `dev` and is deliberately rejected as an unsupported version, so point the plugin at the audited release binary, which must live outside the vault. The user trusts an executable explicitly in settings; trust is the file's real path plus a SHA-256 of its content, so replacing the file withdraws it.
+
 ## Growing this guide
 
 Expand this guide as development produces verified knowledge: module entry points, debugging hints, Beans integration pitfalls, and release checks. Link to authoritative project information or focused guides rather than duplicating their rules and version tables.

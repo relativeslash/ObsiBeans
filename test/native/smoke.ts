@@ -1,13 +1,14 @@
 /**
  * Native-window smoke test, separate from the headless checks. Loads dist/ into a disposable vault in an
  * isolated Obsidian instance with its own profile directory, so the user's running Obsidian and vaults are
- * untouched. Checks the app version, enable, command, view mount, settings, unmount on disable, reload and runtime errors.
+ * untouched. Checks the app version, enable, command, view mount, settings, project binding through Obsidian's
+ * own vault adapter and YAML parser (against a fake Beans executable), unmount on disable, reload and runtime errors.
  *
  * Needs a desktop session. OBSIDIAN_BIN is the launcher (default `obsidian`); OBSIDIAN_ASAR is the app package
  * of the target version (default ~/.config/obsidian/obsidian-<minAppVersion>.asar).
  */
 import { spawn } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, isAbsolute, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -161,8 +162,22 @@ async function main(): Promise<void> {
 
     const settingsText = await session.evaluate(`(app.setting.open(), app.setting.openTabById(${id}), await new Promise(requestAnimationFrame), app.setting.activeTab?.containerEl.textContent ?? '')`);
     await session.evaluate(`app.setting.close()`);
-    check(typeof settingsText === 'string' && settingsText.includes(en['settings.project.heading']) && settingsText.includes(en['settings.project.notBound']),
+    check(typeof settingsText === 'string' && settingsText.includes(en['settings.project.heading']) && settingsText.includes(en['binding.executable-not-set']),
       'the settings tab renders the declared project settings');
+
+    // Binding needs the real vault adapter and parseYaml. A Node script outside the vault stands in for Beans.
+    const fakeBeans = join(sandbox, 'beans');
+    writeFileSync(fakeBeans, `#!${process.execPath}\nconsole.log('beans 0.4.2 (fake) built now')\n`);
+    chmodSync(fakeBeans, 0o755);
+    mkdirSync(join(vault, 'Task root'));
+    writeFileSync(join(vault, '.beans.yml'), 'beans:\n    path: Task root\n    prefix: FX-\n    id_length: 5\n');
+    const bound = await session.evaluate(`(async () => {
+      const plugin = app.plugins.plugins[${id}];
+      plugin.settings.executable = ${JSON.stringify(fakeBeans)};
+      await plugin.confirmExecutable();
+      return plugin.binding?.ok === true && plugin.binding.value.version === '0.4.2' && plugin.binding.value.prefix === 'FX-' && plugin.binding.value.idLength === 5;
+    })()`);
+    check(bound, 'the trusted executable binds the vault project through the real vault adapter and YAML parser');
 
     await session.evaluate(`app.plugins.disablePlugin(${id})`);
     check(await session.evaluate(`!app.plugins.plugins[${id}] && !document.querySelector('.obsibeans-workspace')`), 'disabling unloads the plugin and unmounts the workspace');
