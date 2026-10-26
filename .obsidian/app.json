@@ -1,0 +1,11 @@
+{
+  "alwaysUpdateLinks": true,
+  "rightToLeft": false,
+  "showLineNumber": false,
+  "strictLineBreaks": false,
+  "defaultViewMode": "source",
+  "livePreview": true,
+  "showUnsupportedFiles": true,
+  "promptDelete": false,
+  "attachmentFolderPath": "./attachments"
+}

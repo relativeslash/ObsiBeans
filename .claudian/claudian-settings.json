@@ -1,0 +1,352 @@
+{
+  "userName": "",
+  "permissionMode": "auto",
+  "model": "haiku",
+  "effortLevel": "high",
+  "serviceTier": "default",
+  "enableAutoTitleGeneration": true,
+  "titleGenerationLocale": "",
+  "titleGenerationModel": "openai-codex/gpt-6-astra",
+  "excludedTags": [],
+  "mediaFolder": "",
+  "systemPrompt": "Always start with reading AGENTS.md",
+  "sharedEnvironmentVariables": "",
+  "envSnippets": [],
+  "customContextLimits": {},
+  "keyboardNavigation": {
+    "scrollUpKey": "w",
+    "scrollDownKey": "s",
+    "focusInputKey": "i"
+  },
+  "requireCommandOrControlEnterToSend": true,
+  "locale": "en",
+  "providerConfigs": {
+    "claude": {
+      "enabled": true,
+      "responseStyle": "Default",
+      "cliPath": "",
+      "cliPathsByHost": {},
+      "loadUserSettings": true,
+      "enableChrome": false,
+      "visibleModels": [
+        "opus"
+      ],
+      "modelAliases": {},
+      "environmentVariables": "",
+      "environmentHash": "",
+      "selectedModels": [
+        {
+          "value": "opus",
+          "label": "Opus 5.5",
+          "description": "For complex work and everyday tasks",
+          "resolvedModel": "claude-opus-5-5",
+          "reasoningMetadataResolved": true,
+          "supportedEffortLevels": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      ]
+    },
+    "codex": {
+      "enabled": true,
+      "safeMode": "workspace-write",
+      "cliPath": "",
+      "cliPathsByHost": {},
+      "modelAliases": {},
+      "visibleModels": [
+        "gpt-6-astra",
+        "gpt-6-sol",
+        "gpt-6-luna"
+      ],
+      "enableUltraEffort": false,
+      "responseStyle": "pragmatic",
+      "reasoningSummary": "detailed",
+      "environmentVariables": "",
+      "environmentHash": "runtime-input:v1:ed54f4f5238abeec7f65a5da1e468c9a639e157a7d1c7753b53f54ba1196e8a0",
+      "installationMethodsByHost": {},
+      "wslDistroOverridesByHost": {},
+      "selectedModels": [
+        {
+          "model": "gpt-6-astra",
+          "displayName": "GPT-6 Astra",
+          "description": "Frontier intelligence for the most demanding work.",
+          "supportedReasoningEfforts": [
+            {
+              "value": "low",
+              "description": "Fast responses with lighter reasoning"
+            },
+            {
+              "value": "medium",
+              "description": "Balances speed and reasoning depth for everyday tasks"
+            },
+            {
+              "value": "high",
+              "description": "Greater reasoning depth for complex problems"
+            },
+            {
+              "value": "xhigh",
+              "description": "Extra high reasoning depth for complex problems"
+            },
+            {
+              "value": "max",
+              "description": "Maximum reasoning depth for the hardest problems"
+            },
+            {
+              "value": "ultra",
+              "description": "Maximum reasoning with automatic task delegation"
+            }
+          ],
+          "defaultReasoningEffort": "low",
+          "serviceTiers": [
+            {
+              "id": "priority",
+              "name": "Fast",
+              "description": "2x speed, increased usage"
+            }
+          ],
+          "defaultServiceTier": null,
+          "inputModalities": [
+            "text",
+            "image"
+          ],
+          "isDefault": true
+        },
+        {
+          "model": "gpt-6-sol",
+          "displayName": "GPT-6 Sol",
+          "description": "Previous generation workhorse model.",
+          "supportedReasoningEfforts": [
+            {
+              "value": "low",
+              "description": "Fast responses with lighter reasoning"
+            },
+            {
+              "value": "medium",
+              "description": "Balances speed and reasoning depth for everyday tasks"
+            },
+            {
+              "value": "high",
+              "description": "Greater reasoning depth for complex problems"
+            },
+            {
+              "value": "xhigh",
+              "description": "Extra high reasoning depth for complex problems"
+            },
+            {
+              "value": "max",
+              "description": "Maximum reasoning depth for the hardest problems"
+            },
+            {
+              "value": "ultra",
+              "description": "Maximum reasoning with automatic task delegation"
+            }
+          ],
+          "defaultReasoningEffort": "medium",
+          "serviceTiers": [
+            {
+              "id": "priority",
+              "name": "Fast",
+              "description": "1.5x speed"
+            }
+          ],
+          "defaultServiceTier": null,
+          "inputModalities": [
+            "text",
+            "image"
+          ],
+          "isDefault": false
+        },
+        {
+          "model": "gpt-6-luna",
+          "displayName": "GPT-6 Luna",
+          "description": "Fast and affordable model for easier tasks.",
+          "supportedReasoningEfforts": [
+            {
+              "value": "low",
+              "description": "Fast responses with lighter reasoning"
+            },
+            {
+              "value": "medium",
+              "description": "Balances speed and reasoning depth for everyday tasks"
+            },
+            {
+              "value": "high",
+              "description": "Greater reasoning depth for complex problems"
+            },
+            {
+              "value": "xhigh",
+              "description": "Extra high reasoning depth for complex problems"
+            },
+            {
+              "value": "max",
+              "description": "Maximum reasoning depth for the hardest problems"
+            }
+          ],
+          "defaultReasoningEffort": "medium",
+          "serviceTiers": [
+            {
+              "id": "priority",
+              "name": "Fast",
+              "description": "1.5x speed"
+            }
+          ],
+          "defaultServiceTier": null,
+          "inputModalities": [
+            "text",
+            "image"
+          ],
+          "isDefault": false
+        }
+      ]
+    },
+    "grok": {
+      "cliPath": "",
+      "cliPathsByHost": {
+        "device-0ef1803db35b459c250ef2b5ef513832ec3e632812431953374b11be9ecc4ba6": "/home/whisper2shade/.grok/bin/grok"
+      },
+      "enabled": true,
+      "environmentHash": "runtime-input:v1:dc1bead6d0a0454aa2ef168c60c70dcdfaaab8432bd56e188de4c7b30440ac6f",
+      "environmentVariables": "",
+      "modelAliases": {},
+      "preferredReasoningByModel": {},
+      "visibleModels": [
+        "grok-4.7",
+        "grok-4.7-build-fast"
+      ],
+      "selectedModelsByHost": {
+        "device-0ef1803db35b459c250ef2b5ef513832ec3e632812431953374b11be9ecc4ba6": {
+          "defaultModelId": "grok-4.7",
+          "fingerprint": "1:324af0861da92f9afa430f0081dee0650d2bec4184f4a0b551addb492cb6d389",
+          "models": [
+            {
+              "agentType": "grok-build-plan",
+              "contextWindow": 256000,
+              "defaultReasoningEffort": "high",
+              "description": "SpaceXAI's latest frontier model",
+              "displayName": "Grok 4.7",
+              "rawId": "grok-4.7",
+              "reasoningMetadataResolved": true,
+              "reasoningEfforts": [
+                {
+                  "description": "Maximum reasoning for the hardest tasks.",
+                  "label": "Extra High",
+                  "value": "xhigh"
+                },
+                {
+                  "description": "Thorough reasoning and quality. Recommended.",
+                  "label": "High",
+                  "value": "high"
+                },
+                {
+                  "description": "Strong quality with a faster turnaround.",
+                  "label": "Medium",
+                  "value": "medium"
+                },
+                {
+                  "description": "Fastest responses. Best for simple tasks.",
+                  "label": "Low",
+                  "value": "low"
+                }
+              ],
+              "supportsReasoning": true
+            },
+            {
+              "agentType": "grok-build-plan",
+              "contextWindow": 256000,
+              "defaultReasoningEffort": "high",
+              "description": "Fast variant. 2x the price.",
+              "displayName": "Grok 4.7 Fast",
+              "rawId": "grok-4.7-build-fast",
+              "reasoningMetadataResolved": true,
+              "reasoningEfforts": [
+                {
+                  "description": "Maximum reasoning for the hardest tasks.",
+                  "label": "Extra High",
+                  "value": "xhigh"
+                },
+                {
+                  "description": "Thorough reasoning and quality. Recommended.",
+                  "label": "High",
+                  "value": "high"
+                },
+                {
+                  "description": "Strong quality with a faster turnaround.",
+                  "label": "Medium",
+                  "value": "medium"
+                },
+                {
+                  "description": "Fastest responses. Best for simple tasks.",
+                  "label": "Low",
+                  "value": "low"
+                }
+              ],
+              "supportsReasoning": true
+            }
+          ],
+          "refreshedAt": 1792965904687
+        }
+      }
+    },
+    "opencode": {
+      "cliPath": "",
+      "cliPathsByHost": {},
+      "enabled": false,
+      "environmentHash": "",
+      "environmentVariables": "",
+      "modelAliases": {},
+      "preferredThinkingByModel": {},
+      "thinkingOptionsByModel": {},
+      "visibleModels": [],
+      "selectedModels": []
+    },
+    "pi": {
+      "cliPath": "",
+      "cliPathsByHost": {},
+      "enabled": false,
+      "environmentHash": "",
+      "environmentVariables": "",
+      "modelAliases": {},
+      "preferredThinkingByModel": {},
+      "visibleModels": [],
+      "selectedModels": []
+    }
+  },
+  "settingsProvider": "claude",
+  "lastSelectedChatModel": {
+    "providerId": "claude",
+    "model": "opus"
+  },
+  "savedProviderModel": {
+    "grok": "grok/grok-4.7"
+  },
+  "savedProviderEffort": {
+    "grok": "high"
+  },
+  "savedProviderServiceTier": {},
+  "savedProviderPermissionMode": {
+    "claude": "auto",
+    "codex": "auto-review",
+    "grok": "auto"
+  },
+  "pendingProviderSessionInvalidations": {},
+  "maxWarmAgentProcesses": 5,
+  "enableAutoScroll": true,
+  "showMessageTimestamps": true,
+  "deferMathRenderingDuringStreaming": true,
+  "expandFileEditsByDefault": true,
+  "chatViewPlacement": "right-sidebar",
+  "enableZenMode": true,
+  "enableDualPane": true,
+  "dualPaneSide": "right",
+  "restoreTabsOnStartup": true,
+  "skillsSynced": false,
+  "sessionManagerOrganization": "list",
+  "sessionManagerSort": "last-updated",
+  "sessionAutoArchiveAfter": "off",
+  "pinnedLinkedContentPaths": [],
+  "hiddenCommands": []
+}

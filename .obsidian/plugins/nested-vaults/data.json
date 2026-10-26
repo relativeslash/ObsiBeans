@@ -1,0 +1,9 @@
+{
+  "activeSubVault": "",
+  "globalAllowedFolders": [
+    "Attachments",
+    "Templates"
+  ],
+  "autoMoveNewNotes": false,
+  "enforceSearchScope": true
+}
