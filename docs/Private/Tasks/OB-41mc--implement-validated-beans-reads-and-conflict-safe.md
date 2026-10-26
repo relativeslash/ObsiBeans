@@ -7,7 +7,7 @@ priority: high
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-26T01:45:43Z
+updated_at: 2026-10-26T02:37:27Z
 parent: OB-478m
 blocked_by:
     - OB-8jei
@@ -40,3 +40,7 @@ Run fixtures for normal/error responses, schema drift, Unicode and escaping; rea
 ## Handoff
 
 Hand off typed queries/mutations, validated data shapes and error semantics with real backend contract tests. Update affected documentation with verified facts and append a Summary of Changes with commands, results, limitations, and follow-up bean IDs. Do not complete with unchecked acceptance items or unreported required verification gaps.
+
+## Contract inputs
+
+Implement the [[docs/Private/Design/Beans 0.4.2 contract.md|Beans 0.4.2 contract]] adapter decisions owned by this bean: ifMatch computed from raw file bytes, blocking of lossy frontmatter, local value validation, one mutation per call, duplicate-ID blocking, error classification, and re-reading after uncertain writes. The release behavior is asserted by `test/contract/beans-0.4.2/audit.sh`. Parity rows: TP-15 in the [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md|TUI parity matrix]].

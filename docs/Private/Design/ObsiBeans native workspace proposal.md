@@ -1,12 +1,12 @@
 ---
 created_at: 2026-10-26T01:16:31Z
-updated_at: 2026-10-26T01:46:43Z
+updated_at: 2026-10-26T02:32:50Z
 ---
 
 # ObsiBeans native workspace proposal
 
 > [!important] Accepted v1 design — not implemented
-> On 2026-10-26, the project owner accepted this proposal as version 1 and requested an implementation plan. It defines the intended native Obsidian interface for Beans with application lifecycle management (ALM) interaction patterns. Open decisions below still require explicit resolution; acceptance is not evidence of implemented or tested behavior.
+> On 2026-10-26, the project owner accepted this proposal as version 1 and requested an implementation plan. It defines the intended native Obsidian interface for Beans with application lifecycle management (ALM) interaction patterns. The former open decisions are resolved in [[#V1 decisions]]; acceptance is not evidence of implemented or tested behavior.
 
 Implementation entry point: [[docs/Private/Tasks/OB-fgjv--obsibeans-v1-native-workspace.md|v1 milestone and dependency-ordered implementation plan]]. Work status, sequencing, acceptance checklists and agent handoffs live in Beans, not in this design note.
 
@@ -29,7 +29,7 @@ Inspected on 2026-10-26:
 
 Upstream describes creation, relationship editing, bulk changes, and detail previews in its [release notes](https://github.com/hmans/beans/releases). The [Beans repository](https://github.com/hmans/beans) warns that interfaces may change. Local inspected behavior is the proposal's baseline; upstream main is not assumed compatible.
 
-No plugin implementation, runtime integration test, or complete interactive TUI parity audit has been performed. Before claiming full parity, enumerate and test every action against the exact supported binary, including inherited navigation bindings and modal behavior.
+The audit of the official v0.4.2 release binary superseded this inspection on 2026-10-26. Its results are in [[docs/Private/Design/Beans 0.4.2 contract.md|the Beans 0.4.2 contract]] and [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md|the TUI parity matrix]]. No plugin implementation or runtime integration test exists yet.
 
 ## Product principles
 
@@ -76,7 +76,7 @@ Use Obsidian theme colors, typography, icons, focus styles, and light/dark modes
 | View | Primary use | Proposed interactions |
 | --- | --- | --- |
 | List | Search, triage, bulk editing | Configurable columns, sorting, inline fields, checkboxes, inspector |
-| Board | Understand workflow | Status columns, cross-status drag, optional parent swimlanes |
+| Board | Understand workflow | Status columns, cross-status drag, parent swimlanes |
 | Hierarchy | Plan larger work | Expand parents, inspect children, progress and blockers, create child |
 
 All views share filters and selected bean identity. Parent context shown for a search match is visually distinguished from a matching result and excluded from match counts and implicit bulk selection.
@@ -89,7 +89,7 @@ Ready follows the installed CLI's semantics: not blocked, excluding draft, in-pr
 
 ## TUI parity map
 
-This table is a proposed implementation contract based on inspected source, not evidence of completed parity.
+This table summarizes the parity scope. The row-level contract, with stable identifiers, owners, and test types, is [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md|the TUI parity matrix]]. Neither is evidence of completed parity.
 
 | Existing TUI capability | Proposed native equivalent |
 | --- | --- |
@@ -97,7 +97,7 @@ This table is a proposed implementation contract based on inspected source, not 
 | Highlight-driven preview | Selection-driven inspector |
 | Detail view, scrolling, related-bean navigation | Issue tabs, scrollable content, relationship links and back navigation |
 | Creation | Quick-create dialog and expanded form |
-| Editing in an external editor | In-Obsidian body editor and open-source-note action; optional explicitly configured external editor |
+| Editing in an external editor | In-Obsidian body editor and open-source-note action; no external editor in v1 |
 | Status, type, priority changes | Inline pickers and inspector fields |
 | Set or remove parent | Searchable eligible-parent picker |
 | Blocking relationships | Distinct Blocked by and Blocks sections with add/remove actions |
@@ -148,13 +148,13 @@ Beans CLI / GraphQL
 Existing .beans.yml and bean Markdown files
 ```
 
-Use native workspace views, settings, commands, and lifecycle-managed listeners. These extension points exist in the [official Obsidian API](https://github.com/obsidianmd/obsidian-api/blob/master/README.md). A UI framework and dependency versions remain undecided; this proposal does not select a standalone web-app stack.
+Use native workspace views, settings, commands, and lifecycle-managed listeners. These extension points exist in the [official Obsidian API](https://github.com/obsidianmd/obsidian-api/blob/master/README.md). The UI approach and layer dependency rules are in [[#V1 decisions]]; dependency versions belong in project information. No standalone web-app stack is used.
 
 Discover and explicitly bind the intended project configuration and task root. Never assume `.beans/`, inherit an unrelated working directory, or silently execute a repository-provided binary. The user selects or confirms the executable. Resolve bean paths against the configured root and reject traversal outside it.
 
 Use structured CLI/GraphQL output, variables rather than string-built queries, runtime response validation, and capability checks. Do not require an HTTP server absent from the inspected CLI. The adapter owns child-process timeouts, cancellation, output limits, and error translation. Views consume typed results rather than subprocess output.
 
-The initial supported environment is desktop Obsidian because the design executes a local binary. Mobile needs a separate backend strategy and is not promised. External task directories and multiple repositories also need explicit scope decisions before implementation.
+The initial supported environment is desktop Obsidian because the design executes a local binary. Mobile needs a separate backend strategy and is not promised. V1 binds one project whose task root is inside the vault; see [[#V1 decisions]].
 
 ### Data ownership
 
@@ -183,7 +183,7 @@ Archive and deletion are additional CLI workflows, not baseline TUI parity. They
 
 ## Proposed decision and alternatives
 
-**Decision status:** accepted for v1 by the project owner on 2026-10-26. Use a native graphical workspace with a version-aware CLI adapter. The acceptance does not settle the explicitly open decisions or verify the backend assumptions.
+**Decision status:** accepted for v1 by the project owner on 2026-10-26. Use a native graphical workspace with a version-aware CLI adapter. The open decisions were resolved separately in [[#V1 decisions]]; neither verifies the backend assumptions.
 
 **Alternatives:** an embedded terminal would preserve terminal interaction but not deliver the requested native ALM experience; an embedded web application would depend on a separate compatible runtime and integration model; direct Markdown/YAML mutation would duplicate Beans validation and serialization responsibilities.
 
@@ -205,9 +205,98 @@ These are intended acceptance criteria, not completed tests or implementation ta
 8. Verify theme compatibility, keyboard-only use, zoom, focus restoration, and representative large datasets.
 9. Confirm disabling/reloading the plugin leaves no orphan processes or listeners and does not discard unsaved edits silently.
 
-## Open decisions
+## V1 decisions
 
-Initial compatibility targets are selected in [[docs/Private/Contributing/ObsiBeans project info.md]]; validate them before claiming support. Confirm default creation behavior, initial project scope, external-editor support, saved-view sharing, and data-preservation policy before implementation. Manual ordering, archive/delete, mobile, and additional ALM data fields require separate decisions rather than implicit feature promises.
+Resolved by the project owner on 2026-10-26 in [[docs/Private/Tasks/OB-wzgt--resolve-v1-scope-and-interaction-decisions.md|the scope decision task]]. These replace the former open decisions list. They are product decisions, not evidence of implemented or tested behavior. Exact runtime and toolchain pins belong in [[docs/Private/Contributing/ObsiBeans project info.md]], not here.
+
+### Scope choices
+
+| Decision | Accepted answer | Rationale | Review trigger |
+| --- | --- | --- | --- |
+| Repository and task root | One explicitly bound Beans project per vault. Its configured task root must resolve inside the active vault. | Obsidian link resolution, backlinks, and link-aware moves work only on vault files. | A request for external roots or several projects per vault |
+| External editor | Not in v1. Use the in-Obsidian body editor and Open source note. | Avoids executing a second user-configured program and its process lifecycle. | Parity testing shows a TUI workflow that cannot be covered in Obsidian |
+| Saved-view sharing | Plugin-local only, stored in the plugin's data. Never stored in the repository or bean frontmatter. | No new repository file format or merge conflicts. | A request to share views between clones |
+| Creation defaults | Normal creation shows and uses the project's effective default status. A separate Create draft action forces `draft`. | Matches Beans defaults and keeps the TUI capture workflow. | Beans changes its default-status semantics |
+| Custom frontmatter | Mutations on a bean with frontmatter that Beans would not preserve are blocked. The plugin explains why and offers Open source note. | Beans can drop extra fields on update. Blocking is the only policy with no data loss before preservation is verified. | Contract evidence from [[docs/Private/Tasks/OB-hup8--audit-beans-042-contracts-and-complete-the-tui-par.md\|the contract audit]] proves preservation, or a baseline change |
+| Board parent swimlanes | Included in v1. See [[#Board swimlanes]]. | The owner selected it. | Feedback that lanes add more noise than value |
+| UI approach | Svelte 5 components mounted inside Obsidian `ItemView`s, with Obsidian theme variables. No standalone web-app stack. | Keyed reconciliation preserves focus and scroll across refreshes with a small compiled runtime. Obsidian documents this integration. | Svelte compatibility problems with the selected Obsidian baseline |
+| Desktop OS test scope | Linux is tested. Windows and macOS are untested, but code must not depend on Linux-only paths, shells, or path separators. | The owner's environment is Linux. Cross-platform claims need evidence. | A request for Windows or macOS support |
+
+Archive and deletion, manual ordering, mobile, and assignees, sprints, estimates, comments, permissions, and audit history remain out of v1. Each requires its own decision.
+
+### Saved views
+
+A saved view stores these fields:
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Random plugin-generated identifier. Not shown to the user. |
+| `name` | User-visible name. Unique among saved views. |
+| `search` | Free-text query. Empty means no text filter. |
+| `statuses`, `types`, `priorities` | Allowed values. An empty list means any value. |
+| `tags` | A bean matches if it has any listed tag. An empty list means any. |
+| `readiness` | `any`, `ready`, or `blocked`, using backend semantics. |
+| `representation` | `list`, `board`, or `hierarchy` |
+| `sort` | Field and direction for list and board order |
+| `swimlanes` | Board grouping: `none` or `parent` |
+
+Plugin data carries a `schemaVersion` integer. On load, the plugin migrates older versions one step at a time. A view that cannot be parsed or migrated is kept as raw data, listed as invalid, and can be deleted, but it never blocks loading of other views. A stored filter value that the backend no longer reports, such as a removed status, is retained and shown as unmatched rather than silently dropped. Saved-view problems never touch bean files.
+
+### Progress counting
+
+- Count only leaf descendants: beans under the parent, at any depth, that have no children. Intermediate parents and the parent itself are not counted.
+- Show completed and scrapped counts separately.
+- Progress percentage is completed divided by the number of leaves that are not scrapped.
+- A parent with no leaves shows "No child work" instead of 0 % or 100 %. A parent whose leaves are all scrapped shows "All scrapped".
+- Traversal is bounded. It stops at cycles and missing parents and reports them, never looping.
+
+### Selection hidden by filters
+
+Selected beans stay selected when a filter hides them. The bulk toolbar shows the total and hidden counts, for example "5 selected (2 hidden)". Bulk actions target every selected bean, and selection can be reviewed and cleared. After a refresh, beans that no longer exist in the backend leave the selection with a notice. Parent context rows and swimlane headers can never be selected implicitly.
+
+### Draft recovery
+
+Unsaved description edits and unsaved creation forms are recoverable drafts stored in plugin state. They are separate from preferences and never reported as saved data. Each draft records the full bean ID (or a local key for a new bean), the text, the ETag it was based on, and the time. When the bean is reopened, the user can choose Restore or Discard. If the bean's ETag changed after the draft was made, Restore opens conflict review instead of overwriting newer data. A successful save or an explicit discard removes the draft. Drafts for beans that no longer exist stay listed so their text can be copied before discarding.
+
+### Board swimlanes
+
+Swimlanes are a per-view board option. With swimlanes set to `parent`, the board groups cards into one row per direct parent, plus a "No parent" lane. Lanes use the same deterministic order as the list. A lane header is context, not a selectable bean or bulk target. Dragging a card between columns changes its status. Dragging between lanes is not allowed in v1, and a parent change goes through the parent picker. This keeps drag from acting as a hidden relationship edit.
+
+### Module boundaries
+
+The architecture layers above become these dependency rules. The scaffold chooses exact paths and enforces the rules with architecture checks.
+
+| Layer | Owns | May depend on |
+| --- | --- | --- |
+| Beans adapter | Process execution, CLI and GraphQL calls, response validation, error translation | Node built-ins only. No Obsidian, no Svelte. |
+| Application state and actions | Queries, cache, filters, selection, drafts, mutations, conflict state | Adapter interfaces. Obsidian access goes through injected ports for vault events and persistence. |
+| Views | Svelte components and their `ItemView` hosts | State and actions. Never the adapter directly. |
+| Plugin shell | Plugin class, settings tab, commands, view registration, vault event wiring, link-aware file actions | All of the above |
+
+### Backlog mapping
+
+| Capability | Owner bean |
+| --- | --- |
+| Beans contract evidence and parity matrix | [[docs/Private/Tasks/OB-hup8--audit-beans-042-contracts-and-complete-the-tui-par.md\|OB-hup8]] |
+| Plugin scaffold, toolchain and quality gates | [[docs/Private/Tasks/OB-f6ce--scaffold-the-desktop-plugin-and-executable-quality.md\|OB-f6ce]] |
+| Project binding, in-vault task root, executable selection, bounded processes | [[docs/Private/Tasks/OB-8jei--implement-trusted-project-binding-and-bounded-proc.md\|OB-8jei]] |
+| Validated reads, ETag mutations, custom-frontmatter blocking | [[docs/Private/Tasks/OB-41mc--implement-validated-beans-reads-and-conflict-safe.md\|OB-41mc]] |
+| Shared state, refresh, hidden selection, draft recovery | [[docs/Private/Tasks/OB-os2h--implement-shared-query-state-refresh-and-recoverab.md\|OB-os2h]] |
+| Workspace layout and issue tabs | [[docs/Private/Tasks/OB-s9b7--build-native-workspace-navigation-and-issue-tab-li.md\|OB-s9b7]] |
+| List, search, filters and tag chips | [[docs/Private/Tasks/OB-7a9z--build-the-searchable-list-and-shared-filtering-con.md\|OB-7a9z]] |
+| Inspector, creation defaults, body editing, editable tags, copy ID and link | [[docs/Private/Tasks/OB-yieb--build-inspector-creation-and-recoverable-descripti.md\|OB-yieb]] |
+| Parent, children and blockers | [[docs/Private/Tasks/OB-op2n--build-parent-children-and-directional-blocker-edit.md\|OB-op2n]] |
+| Bulk editing and copying selected IDs | [[docs/Private/Tasks/OB-26rz--build-explicit-target-bulk-editing-with-partial-fa.md\|OB-26rz]] |
+| Status board and parent swimlanes | [[docs/Private/Tasks/OB-q9nz--build-the-status-board-with-accessible-card-moveme.md\|OB-q9nz]] |
+| Hierarchy and progress counting | [[docs/Private/Tasks/OB-uqrv--build-hierarchy-navigation-and-milestone-progress.md\|OB-uqrv]] |
+| Note links, backlinks, selected-text conversion, link insertion | [[docs/Private/Tasks/OB-rmmo--build-note-links-backlinks-and-selected-text-conve.md\|OB-rmmo]] |
+| Saved views, schema migration, ready and in-progress sidebar | [[docs/Private/Tasks/OB-cjoc--build-saved-views-and-ready-work-sidebar.md\|OB-cjoc]] |
+| Keyboard parity, help overlay, responsive layout | [[docs/Private/Tasks/OB-363m--complete-accessible-keyboard-parity-and-responsive.md\|OB-363m]] |
+| Large-project performance and lifecycle bounds | [[docs/Private/Tasks/OB-t0ve--measure-large-project-behavior-and-lifecycle-resou.md\|OB-t0ve]] |
+| Baseline compatibility, parity and failure verification | [[docs/Private/Tasks/OB-zdg2--verify-baseline-compatibility-parity-and-failure-r.md\|OB-zdg2]] |
+| Packaging and handoff | [[docs/Private/Tasks/OB-piqb--package-the-v1-candidate-and-complete-the-agent-ha.md\|OB-piqb]] |
+
+Not in v1 and owned by no bean: external editor, external task roots, multiple projects, shared saved views, manual ordering, archive and delete, mobile, and the additional ALM data fields.
 
 ## Documentation exception and provenance
 

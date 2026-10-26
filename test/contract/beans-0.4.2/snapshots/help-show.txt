@@ -1,0 +1,15 @@
+Displays the full contents of one or more beans, including front matter and body.
+
+Usage:
+  beans show <id> [id...] [flags]
+
+Flags:
+      --body-only   Output only the body content
+      --etag-only   Output only the etag
+  -h, --help        help for show
+      --json        Output as JSON
+      --raw         Output raw markdown without styling
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

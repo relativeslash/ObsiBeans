@@ -7,7 +7,7 @@ priority: high
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-26T01:45:43Z
+updated_at: 2026-10-26T02:37:27Z
 parent: OB-478m
 blocked_by:
     - OB-wzgt
@@ -43,3 +43,7 @@ Use fake process fixtures for injection strings, oversized/malformed output, han
 ## Handoff
 
 Expose typed process/binding results and ownership/disposal contracts; record supported platforms and any unverified environment. Update affected documentation with verified facts and append a Summary of Changes with commands, results, limitations, and follow-up bean IDs. Do not complete with unchecked acceptance items or unreported required verification gaps.
+
+## Contract inputs
+
+Follow the invocation rules in the [[docs/Private/Design/Beans 0.4.2 contract.md|Beans 0.4.2 contract]]: explicit `--config`, the config directory as working directory, `BEANS_PATH` removed, `--json` always. Treat non-bean Markdown files under the task root as invalid data.

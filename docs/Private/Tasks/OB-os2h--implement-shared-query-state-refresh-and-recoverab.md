@@ -7,7 +7,7 @@ priority: high
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-26T01:45:43Z
+updated_at: 2026-10-26T02:37:28Z
 parent: OB-478m
 blocked_by:
     - OB-41mc
@@ -40,3 +40,7 @@ Test out-of-order queries, rapid project/filter switches, external edits, config
 ## Handoff
 
 Document public state/action contracts, draft storage/recovery and fixture helpers for feature implementers. Update affected documentation with verified facts and append a Summary of Changes with commands, results, limitations, and follow-up bean IDs. Do not complete with unchecked acceptance items or unreported required verification gaps.
+
+## Contract inputs
+
+Follow the [[docs/Private/Design/Beans 0.4.2 contract.md|Beans 0.4.2 contract]] decisions for load failures, uncertain writes, and parse-retry on refresh. Parity rows: TP-23, TP-26, TP-28 in the [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md|TUI parity matrix]].

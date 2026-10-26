@@ -7,7 +7,7 @@ priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-26T01:45:43Z
+updated_at: 2026-10-26T02:37:28Z
 parent: OB-lb80
 blocked_by:
     - OB-7a9z
@@ -42,3 +42,7 @@ Use fixtures with multiple levels, empty milestones, mixed completed/scrapped le
 ## Handoff
 
 Document the displayed counting rules and provide reproducible hierarchy fixtures. Update affected documentation with verified facts and append a Summary of Changes with commands, results, limitations, and follow-up bean IDs. Do not complete with unchecked acceptance items or unreported required verification gaps.
+
+## Contract inputs
+
+The backend accepts mixed-direction blocking cycles and type changes that leave invalid children; traverse with bounds and show such data as invalid. See the [[docs/Private/Design/Beans 0.4.2 contract.md|Beans 0.4.2 contract]].

@@ -7,7 +7,7 @@ priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-26T01:45:43Z
+updated_at: 2026-10-26T02:37:28Z
 parent: OB-1bvb
 blocked_by:
     - OB-7a9z
@@ -41,3 +41,7 @@ Inject mixed validation errors, conflicts, backend loss and a timeout after a po
 ## Handoff
 
 Provide bulk result/retry components and deterministic partial-failure fixtures. Update affected documentation with verified facts and append a Summary of Changes with commands, results, limitations, and follow-up bean IDs. Do not complete with unchecked acceptance items or unreported required verification gaps.
+
+## Contract inputs
+
+Run bulk work as one mutation call per bean, as the [[docs/Private/Design/Beans 0.4.2 contract.md|Beans 0.4.2 contract]] requires. Parity rows: TP-22 to TP-25 in the [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md|TUI parity matrix]].

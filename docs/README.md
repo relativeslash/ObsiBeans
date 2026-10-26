@@ -7,6 +7,8 @@ The repository root is the Obsidian vault; `docs/` is the authoritative document
 | Need | Entry point |
 | --- | --- |
 | Review the accepted v1 native Beans workspace, UI, parity scope, architecture and open decisions | [[docs/Private/Design/ObsiBeans native workspace proposal.md]] |
+| Verified Beans 0.4.2 CLI/GraphQL behavior and adapter decisions | [[docs/Private/Design/Beans 0.4.2 contract.md]] |
+| TUI behaviors and their required native equivalents | [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md]] |
 | Start v1 development: scope gates, dependencies, acceptance criteria and agent handoffs | [[docs/Private/Tasks/OB-fgjv--obsibeans-v1-native-workspace.md]] |
 | Shared-standard inheritance and optional local overrides | [[docs/Private/Contributing/README.md]] |
 | Selected compatibility versions and project information | [[docs/Private/Contributing/ObsiBeans project info.md]] |

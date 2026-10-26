@@ -1,0 +1,25 @@
+Creates a new bean (issue) with a generated ID and optional title.
+
+Usage:
+  beans create [title] [flags]
+
+Aliases:
+  create, c, new
+
+Flags:
+      --blocked-by stringArray   ID of bean that blocks this one (can be repeated)
+      --blocking stringArray     ID of bean this blocks (can be repeated)
+  -d, --body string              Body content (use '-' to read from stdin)
+      --body-file string         Read body from file
+  -h, --help                     help for create
+      --json                     Output as JSON
+      --parent string            Parent bean ID
+      --prefix string            Custom ID prefix (overrides config prefix)
+  -p, --priority string          Priority level (critical, high, normal, low, deferred)
+  -s, --status string            Initial status (in-progress, todo, draft, completed, scrapped)
+      --tag stringArray          Add tag (can be repeated)
+  -t, --type string              Bean type (milestone, epic, bug, feature, task)
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

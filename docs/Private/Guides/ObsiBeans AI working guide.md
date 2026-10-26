@@ -16,6 +16,10 @@ Use the Beans skill to search for an existing task before creating work records 
 
 The owner accepted the native workspace design as v1. Start with [[docs/Private/Tasks/OB-fgjv--obsibeans-v1-native-workspace.md|the v1 implementation milestone]] for scope, execution rules and the work index. Its explicit dependencies identify ready leaf tasks; epic and milestone records are completion gates, not standalone coding assignments. The first leaves resolve open scope decisions and audit the selected Beans contract/TUI parity. No plugin or build toolchain was implemented by planning.
 
+## Beans backend
+
+Before writing adapter, state, or view code, read [[docs/Private/Design/Beans 0.4.2 contract.md|the Beans 0.4.2 contract]]. The plugin depends on several non-obvious behaviors recorded there: queried ETags can be rejected, updates drop unknown frontmatter, GraphQL validates no field values, and blocking links are stored in two directions. For view and keyboard work, also read [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md|the TUI parity matrix]]. Never run experiments against this repository's own tracker; the audit script shows how to use a temporary project.
+
 ## Growing this guide
 
 This guide currently establishes skills and navigation. Expand it as development produces verified knowledge: module entry points, setup and test workflows, plugin reload/debugging hints, Beans integration pitfalls, and release checks. Link to authoritative project information or focused guides rather than duplicating their rules and version tables.

@@ -1,0 +1,11 @@
+Opens an interactive terminal user interface for browsing and managing beans.
+
+Usage:
+  beans tui [flags]
+
+Flags:
+  -h, --help   help for tui
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

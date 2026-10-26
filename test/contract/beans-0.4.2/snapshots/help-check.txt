@@ -1,0 +1,20 @@
+Checks configuration and bean integrity, including:
+- Configuration settings (colors, default type)
+- Broken links (links to non-existent beans)
+- Self-references (beans linking to themselves)
+- Circular dependencies (cycles in blocks/parent relationships)
+
+Use --fix to automatically remove broken links and self-references.
+Note: Cycles cannot be auto-fixed and require manual intervention.
+
+Usage:
+  beans check [flags]
+
+Flags:
+      --fix    Automatically fix broken links and self-references
+  -h, --help   help for check
+      --json   Output as JSON
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

@@ -1,0 +1,16 @@
+Moves all beans with status "completed" or "scrapped" to the archive directory (.beans/archive/).
+Archived beans are preserved for project memory and remain visible in all queries.
+The archive keeps the main .beans directory tidy while preserving project history.
+
+Relationships (parent, blocking) are preserved in archived beans.
+
+Usage:
+  beans archive [flags]
+
+Flags:
+  -h, --help   help for archive
+      --json   Output as JSON
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

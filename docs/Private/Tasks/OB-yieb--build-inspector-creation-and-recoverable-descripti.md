@@ -7,7 +7,7 @@ priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-26T01:45:43Z
+updated_at: 2026-10-26T02:37:28Z
 parent: OB-1bvb
 blocked_by:
     - OB-s9b7
@@ -23,7 +23,7 @@ Implement the [[docs/Private/Design/ObsiBeans native workspace proposal.md|accep
 
 ## Scope and boundaries
 
-Deliver inspect/edit title, metadata/tags, timestamps and Markdown body; quick-create and expanded forms; explicit draft creation; Save/Cancel body editing and precise checklist actions. Open source notes and copy ID/note-link actions use Obsidian resolution. Optional external editor is implemented only if selected in scope.
+Deliver inspect/edit title, metadata/tags, timestamps and Markdown body; quick-create and expanded forms; explicit draft creation; Save/Cancel body editing and precise checklist actions. Open source notes and copy ID/note-link actions use Obsidian resolution. No external editor in v1, per [[docs/Private/Design/ObsiBeans native workspace proposal.md#V1 decisions|V1 decisions]].
 
 ## Acceptance criteria
 
@@ -40,3 +40,7 @@ Test all form defaults, cancellation, duplicate submits, invalid input, concurre
 ## Handoff
 
 Provide tested inspector/create/body-edit components and recoverable conflict flow. Update affected documentation with verified facts and append a Summary of Changes with commands, results, limitations, and follow-up bean IDs. Do not complete with unchecked acceptance items or unreported required verification gaps.
+
+## Contract inputs
+
+Follow the [[docs/Private/Design/Beans 0.4.2 contract.md|Beans 0.4.2 contract]] decisions on explicit creation defaults, local validation, full tag replacement, and body normalization. Parity rows: TP-14 to TP-17 and TP-20 to TP-22 in the [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md|TUI parity matrix]]. TP-20 and TP-21 are the labeled external-editor substitutions.

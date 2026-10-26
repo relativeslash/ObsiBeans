@@ -7,7 +7,7 @@ priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-26T01:45:43Z
+updated_at: 2026-10-26T02:37:28Z
 parent: OB-1bvb
 blocked_by:
     - OB-os2h
@@ -39,3 +39,7 @@ Run view lifecycle tests and native Obsidian smoke checks for opening/reopening 
 ## Handoff
 
 Provide reusable native UI primitives and view lifecycle patterns used by the remaining feature leaves. Update affected documentation with verified facts and append a Summary of Changes with commands, results, limitations, and follow-up bean IDs. Do not complete with unchecked acceptance items or unreported required verification gaps.
+
+## Contract inputs
+
+Parity rows: TP-05, TP-09, TP-11, TP-12 in the [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md|TUI parity matrix]].

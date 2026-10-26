@@ -1,0 +1,11 @@
+Outputs a prompt that primes AI coding agents on how to use the beans CLI to manage project issues.
+
+Usage:
+  beans prime [flags]
+
+Flags:
+  -h, --help   help for prime
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

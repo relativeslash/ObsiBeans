@@ -1,0 +1,48 @@
+Lists all beans in the .beans directory.
+
+Search Syntax (--search/-S):
+  The search flag supports Bleve query string syntax:
+
+  login          Exact term match
+  login~         Fuzzy match (1 edit distance, finds "loggin", "logins")
+  login~2        Fuzzy match (2 edit distance)
+  log*           Wildcard prefix match
+  "user login"   Exact phrase match
+  user AND login Both terms required
+  user OR login  Either term matches
+  slug:auth      Search only in slug field
+  title:login    Search only in title field
+  body:auth      Search only in body field
+
+Usage:
+  beans list [flags]
+
+Aliases:
+  list, ls
+
+Flags:
+      --full                      Include bean body in JSON output
+      --has-blocking              Filter beans that are blocking others
+      --has-parent                Filter beans with a parent
+  -h, --help                      help for list
+      --is-blocked                Filter beans that are blocked by others
+      --json                      Output as JSON
+      --no-blocking               Filter beans that aren't blocking others
+      --no-parent                 Filter beans without a parent
+      --no-priority stringArray   Exclude by priority (can be repeated)
+      --no-status stringArray     Exclude by status (can be repeated)
+      --no-tag stringArray        Exclude beans with tag (can be repeated)
+      --no-type stringArray       Exclude by type (can be repeated)
+      --parent string             Filter by parent ID
+  -p, --priority stringArray      Filter by priority (can be repeated)
+  -q, --quiet                     Only output IDs (one per line)
+      --ready                     Filter beans available to start (not blocked, excludes in-progress/completed/scrapped/draft)
+  -S, --search string             Full-text search in title and body
+      --sort string               Sort by: created, updated, status, priority, id (default: status, priority, type, title)
+  -s, --status stringArray        Filter by status (can be repeated)
+      --tag stringArray           Filter by tag (can be repeated, OR logic)
+  -t, --type stringArray          Filter by type (can be repeated)
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

@@ -1,0 +1,12 @@
+Creates a .beans directory and .beans.yml config file in the current directory.
+
+Usage:
+  beans init [flags]
+
+Flags:
+  -h, --help   help for init
+      --json   Output as JSON
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

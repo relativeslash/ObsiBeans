@@ -1,0 +1,43 @@
+Execute a GraphQL query or mutation against the beans data.
+
+The argument should be a valid GraphQL query or mutation string.
+
+Examples:
+  # List all beans
+  beans graphql '{ beans { id title status } }'
+
+  # Get a specific bean
+  beans graphql '{ bean(id: "abc") { title status body } }'
+
+  # Filter beans by status
+  beans graphql '{ beans(filter: { status: ["todo", "in-progress"] }) { id title } }'
+
+  # Get beans with relationships
+  beans graphql '{ beans { id title blockedBy { id title } children { id title } } }'
+
+  # Use variables
+  beans graphql -v '{"id": "abc"}' 'query GetBean($id: ID!) { bean(id: $id) { title } }'
+
+  # Read from stdin (useful for complex queries or escaping issues)
+  echo '{ beans { id title } }' | beans graphql
+  cat query.graphql | beans graphql
+
+  # Print the schema
+  beans graphql --schema
+
+Usage:
+  beans graphql <query> [flags]
+
+Aliases:
+  graphql, query
+
+Flags:
+  -h, --help               help for graphql
+      --json               Output JSON without colors (for piping)
+  -o, --operation string   Operation name (for multi-operation documents)
+      --schema             Print the GraphQL schema and exit
+  -v, --variables string   Query variables as JSON string
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

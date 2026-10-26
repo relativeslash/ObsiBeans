@@ -1,0 +1,17 @@
+Generate a Markdown roadmap from milestones and epics
+
+Usage:
+  beans roadmap [flags]
+
+Flags:
+  -h, --help                    help for roadmap
+      --include-done            Include completed items
+      --json                    Output as JSON
+      --link-prefix string      URL prefix for links
+      --no-links                Don't render bean IDs as markdown links
+      --no-status stringArray   Exclude milestones by status (can be repeated)
+      --status stringArray      Filter milestones by status (can be repeated)
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

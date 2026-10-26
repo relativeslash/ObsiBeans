@@ -1,0 +1,33 @@
+Updates one or more properties of an existing bean.
+
+Usage:
+  beans update <id> [flags]
+
+Aliases:
+  update, u
+
+Flags:
+      --blocked-by stringArray          ID of bean that blocks this one (can be repeated)
+      --blocking stringArray            ID of bean this blocks (can be repeated)
+  -d, --body string                     New body (use '-' to read from stdin)
+      --body-append string              Text to append to body (use '-' for stdin)
+      --body-file string                Read body from file
+      --body-replace-new string         Replacement text (requires --body-replace-old)
+      --body-replace-old string         Text to find and replace (requires --body-replace-new)
+  -h, --help                            help for update
+      --if-match string                 Only update if etag matches (optimistic locking)
+      --json                            Output as JSON
+      --parent string                   Set parent bean ID
+  -p, --priority string                 New priority (critical, high, normal, low, deferred, or empty to clear)
+      --remove-blocked-by stringArray   ID of blocker bean to remove (can be repeated)
+      --remove-blocking stringArray     ID of bean to unblock (can be repeated)
+      --remove-parent                   Remove parent
+      --remove-tag stringArray          Remove tag (can be repeated)
+  -s, --status string                   New status (in-progress, todo, draft, completed, scrapped)
+      --tag stringArray                 Add tag (can be repeated)
+      --title string                    New title
+  -t, --type string                     New type (milestone, epic, bug, feature, task)
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

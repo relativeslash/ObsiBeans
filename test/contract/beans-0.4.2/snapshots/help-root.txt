@@ -1,0 +1,30 @@
+Beans is a lightweight issue tracker that stores issues as markdown files.
+Track your work alongside your code and supercharge your coding agent with
+a full view of your project.
+
+Usage:
+  beans [command]
+
+Available Commands:
+  archive     Move completed/scrapped beans to the archive
+  check       Validate configuration and bean integrity
+  completion  Generate the autocompletion script for the specified shell
+  create      Create a new bean
+  delete      Delete one or more beans
+  graphql     Execute a GraphQL query or mutation
+  help        Help about any command
+  init        Initialize a beans project
+  list        List all beans
+  prime       Output instructions for AI coding agents
+  roadmap     Generate a Markdown roadmap from milestones and epics
+  show        Show a bean's contents
+  tui         Open the interactive TUI
+  update      Update a bean's properties
+  version     Show version information
+
+Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)
+  -h, --help                help for beans
+
+Use "beans [command] --help" for more information about a command.

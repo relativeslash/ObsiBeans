@@ -1,0 +1,19 @@
+Deletes one or more beans after confirmation (use -f to skip confirmation).
+
+If other beans reference the target bean(s) (as parent or via blocking), you will be
+warned and those references will be removed after confirmation. Use -f to skip all warnings.
+
+Usage:
+  beans delete <id> [id...] [flags]
+
+Aliases:
+  delete, rm
+
+Flags:
+  -f, --force   Skip confirmation and warnings
+  -h, --help    help for delete
+      --json    Output as JSON (implies --force)
+
+Global Flags:
+      --beans-path string   Path to data directory (overrides config and BEANS_PATH env var)
+      --config string       Path to config file (default: searches upward for .beans.yml)

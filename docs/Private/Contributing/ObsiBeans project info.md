@@ -13,6 +13,8 @@ Selected and checked on **2026-10-26 (UTC)**. “Latest” here means the latest
 
 Obsidian 1.15.0 was listed as Catalyst early access when checked, so it is not the public-stable baseline. Beans main has development beyond v0.4.2; unreleased main is not the selected target.
 
+The Beans release was audited on 2026-10-26. Its verified behavior, binary checksums, and adapter decisions are in [[docs/Private/Design/Beans 0.4.2 contract.md]]. To re-verify the release, run `test/contract/beans-0.4.2/audit.sh` from the repository root. It needs network access, and it passes when it ends with `PASS: Beans 0.4.2 contract holds`. A `go install` build reports version `dev` and is not the audited release binary.
+
 ### Meaning of compatibility
 
 The plugin is intended to work with the selected pair above. Compatibility is a requirement to implement and test, **not a claim of already tested support**. No plugin compatibility tests have run. Older versions, future versions, and Obsidian Mobile are not included in this initial target by implication.

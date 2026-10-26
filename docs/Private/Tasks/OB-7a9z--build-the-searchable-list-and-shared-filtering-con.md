@@ -7,7 +7,7 @@ priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-26T01:45:43Z
+updated_at: 2026-10-26T02:37:28Z
 parent: OB-1bvb
 blocked_by:
     - OB-s9b7
@@ -40,3 +40,7 @@ Test combined filters, stable tie-break sorting, hierarchy context, selection ac
 ## Handoff
 
 Hand off shared filter and selection controls for bulk actions and alternate views. Update affected documentation with verified facts and append a Summary of Changes with commands, results, limitations, and follow-up bean IDs. Do not complete with unchecked acceptance items or unreported required verification gaps.
+
+## Contract inputs
+
+Sort client-side and treat search input as plain text, as the [[docs/Private/Design/Beans 0.4.2 contract.md|Beans 0.4.2 contract]] requires. Parity rows: TP-01, TP-06, TP-07 in the [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md|TUI parity matrix]].
