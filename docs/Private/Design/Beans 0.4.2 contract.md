@@ -24,6 +24,8 @@ Each fact carries a `BC-*` identifier when an automated assertion in `test/contr
 
 The developer machine's `~/go/bin/beans` is a `go install` build of the same module version. It reports `dev (unknown) built unknown` and was built with a different Go toolchain, so it is not the audited binary. Only the release asset above is evidence for this contract.
 
+**Development builds.** The plugin accepts a build that reports `dev` as its version, because upstream development moves faster than releases and its improvements are wanted. Such a build binds as *unverified*: the settings status says so, and nothing in this note is guaranteed for it. The adapter decisions below are written as safe fallbacks that hold even if upstream fixes a gap, but a dev build that changes a `BC-*` fact is a review trigger. On 2026-10-26 the developer machine's `go install` build had a help output and GraphQL schema identical to the committed snapshots, and passed the real-binary adapter tests. Any other version string, including other releases, is rejected.
+
 Help output for every command and the GraphQL schema are committed as snapshots in `test/contract/beans-0.4.2/snapshots/` (BC-02). Do not hand-edit them.
 
 ## Rerunning the audit

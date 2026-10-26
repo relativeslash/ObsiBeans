@@ -8,13 +8,13 @@ import { parseYaml } from '../support/obsidian.ts';
 import { makeProject, makeSandbox, trust, type Sandbox } from '../support/project.ts';
 
 /**
- * Runs against the audited Beans 0.4.2 release binary in a disposable project (see the Beans 0.4.2 contract
- * note for how to obtain it). Set OBSIBEANS_BEANS_RELEASE to its absolute path; without it these tests are
- * skipped, which is an unexecuted check, not a pass.
+ * Runs against a real Beans binary in a disposable project: the audited 0.4.2 release (see the Beans 0.4.2
+ * contract note for how to obtain it) or a development build. Set OBSIBEANS_BEANS_RELEASE to its absolute
+ * path; without it these tests are skipped, which is an unexecuted check, not a pass.
  */
 const release = process.env.OBSIBEANS_BEANS_RELEASE ?? '';
 
-describe.skipIf(release === '')('Beans 0.4.2 release binary', () => {
+describe.skipIf(release === '')('real Beans binary', () => {
   let sandbox: Sandbox;
   let runner: ProcessRunner;
   let binding: Binding;
@@ -50,7 +50,7 @@ describe.skipIf(release === '')('Beans 0.4.2 release binary', () => {
 
     const scan = await scanTaskRoot(binding.taskRoot, binding);
 
-    expect(binding.version).toBe('0.4.2');
+    expect(['0.4.2', 'dev']).toContain(binding.version);
     expect(id).toMatch(/^FX-[0-9a-z]{5}$/);
     expect(scan).toMatchObject({ ok: true, scan: { files: [{ id }], invalid: [] } });
     expect(await readdir(sandbox.outside)).toEqual(outsideBefore);

@@ -71,6 +71,6 @@ Limitations:
 - A file swapped after the digest check and before the spawn would still run (marked `ponytail:` in `binding.ts`).
 - `scanTaskRoot` checks names only. The empty-status check, duplicate IDs, custom-frontmatter blocking and mutation error classification belong to OB-41mc; the invalid-data and shared state belong to OB-os2h.
 - Missing `beans.path` is treated as invalid configuration; Beans' own fallback for it was not established.
-- The `go install` build of Beans reports `dev` and is rejected as unsupported by design.
+- Superseded by the owner's later decision: a development build (reports `dev`) is accepted and bound as unverified, because unreleased upstream improvements are wanted. 0.4.2 stays the officially supported release and any other version is still rejected. Verified against the developer's `go install` build with the real-binary tests.
 
 Follow-up beans: none created.

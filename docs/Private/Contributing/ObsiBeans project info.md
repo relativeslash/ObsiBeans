@@ -13,13 +13,15 @@ Selected and checked on **2026-10-26 (UTC)**. “Latest” here means the latest
 
 Obsidian 1.15.0 was listed as Catalyst early access when checked, so it is not the public-stable baseline. Beans main has development beyond v0.4.2; unreleased main is not the selected target.
 
-The Beans release was audited on 2026-10-26. Its verified behavior, binary checksums, and adapter decisions are in [[docs/Private/Design/Beans 0.4.2 contract.md]]. To re-verify the release, run `test/contract/beans-0.4.2/audit.sh` from the repository root. It needs network access, and it passes when it ends with `PASS: Beans 0.4.2 contract holds`. A `go install` build reports version `dev` and is not the audited release binary.
+The Beans release was audited on 2026-10-26. Its verified behavior, binary checksums, and adapter decisions are in [[docs/Private/Design/Beans 0.4.2 contract.md]]. To re-verify the release, run `test/contract/beans-0.4.2/audit.sh` from the repository root. It needs network access, and it passes when it ends with `PASS: Beans 0.4.2 contract holds`. A `go install` or source build reports version `dev` and is not the audited release binary.
 
 ### Meaning of compatibility
 
 The plugin is intended to work with the selected pair above. Compatibility is a requirement to implement and test, **not a claim of already tested support**. The plugin tests on Obsidian so far are the native smoke test (load, open, settings, project binding against a fake Beans executable, unload and reload on 1.14.5, Linux) and the optional run of the process and binding layer against the audited Beans 0.4.2 release binary (Linux, `OBSIBEANS_BEANS_RELEASE`, see Commands). Older versions, future versions, and Obsidian Mobile are not included in this initial target by implication.
 
 The design currently proposes desktop execution of the local Beans CLI. The baseline does not install or upgrade either application. A developer's installed version is evidence about that machine, not a substitute for this selection.
+
+Support policy for the Beans CLI: **0.4.2 is the officially supported release.** A development build (reporting `dev`) is also accepted so that unreleased upstream improvements can be used; the plugin binds to it, labels it unverified in settings, and claims nothing beyond the contract's fallbacks for it. Any other reported version is rejected.
 
 Before releasing a plugin, verify the Beans CLI/GraphQL contract and native Obsidian workflows on this pair. `manifest.json` declares `minAppVersion` 1.14.5 and `isDesktopOnly`.
 

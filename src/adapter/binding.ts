@@ -6,6 +6,8 @@ import type { ProcessResult, ProcessRunner } from './process.ts';
 
 /** The audited release this adapter is written for. See the Beans 0.4.2 contract note. */
 export const SUPPORTED_BEANS_VERSION = '0.4.2';
+/** What a `go install` or source build of Beans calls itself. Accepted, but its behavior is not audited. */
+export const DEV_BEANS_VERSION = 'dev';
 export const DEFAULT_CONFIG = '.beans.yml';
 export const PROBE_TIMEOUT_MS = 5_000;
 export const BEANS_TIMEOUT_MS = 30_000;
@@ -49,6 +51,8 @@ export interface Binding {
   readonly prefix: string;
   readonly idLength: number;
   readonly version: string;
+  /** True only for the audited release. A dev build binds, but only the contract's fallbacks are known to hold. */
+  readonly verified: boolean;
 }
 
 /** What the user confirmed: the executable's real path and a digest of its content at that moment. */
@@ -186,7 +190,7 @@ async function probeVersion(runner: ProcessRunner, executable: string, cwd: stri
   if (result.kind !== 'exited' || result.code !== 0) return fail(describeFailure(result, executable));
   const line = result.stdout.split('\n', 1)[0]?.trim() ?? '';
   const version = /^beans (\S+)/.exec(line)?.[1];
-  return version === SUPPORTED_BEANS_VERSION
+  return version === SUPPORTED_BEANS_VERSION || version === DEV_BEANS_VERSION
     ? { ok: true, value: version }
     : fail({ code: 'executable-unsupported-version', found: line.slice(0, 80), supported: SUPPORTED_BEANS_VERSION });
 }
@@ -237,7 +241,7 @@ async function bind(request: BindingRequest): Promise<Result<Binding>> {
 
   const version = await probeVersion(runner, inspected.value, projectDir);
   if (!version.ok) return version;
-  return { ok: true, value: { executable: inspected.value, configPath, projectDir, taskRoot, prefix, idLength, version: version.value } };
+  return { ok: true, value: { executable: inspected.value, configPath, projectDir, taskRoot, prefix, idLength, version: version.value, verified: version.value === SUPPORTED_BEANS_VERSION } };
 }
 
 /**
