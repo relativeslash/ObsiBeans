@@ -1,11 +1,11 @@
 ---
 # OB-jo2i
 title: Require the verify check on main
-status: todo
+status: in-progress
 type: task
 priority: normal
 created_at: 2026-10-26T09:48:22Z
-updated_at: 2026-10-26T09:48:22Z
+updated_at: 2026-10-26T19:06:06Z
 parent: OB-77pl
 ---
 
@@ -15,8 +15,8 @@ Follow-up from [[docs/Private/Tasks/OB-f6ce--scaffold-the-desktop-plugin-and-exe
 
 ## Acceptance criteria
 
-- [ ] A branch ruleset or protection rule on `main` requires the `verify` status check to pass before merging.
-- [ ] [[docs/Private/Contributing/ObsiBeans project info.md|Project information]] states that the check is required.
+- [x] A branch ruleset or protection rule on `main` requires the `verify` status check to pass before merging.
+- [x] [[docs/Private/Contributing/ObsiBeans project info.md|Project information]] states that the check is required.
 
 ## Verification
 
