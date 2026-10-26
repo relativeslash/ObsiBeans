@@ -137,7 +137,15 @@ async function main(): Promise<void> {
   try {
     session = await DevToolsSession.connect(await windowSocketUrl());
     const id = JSON.stringify(manifest.id);
-    const workspaceText = `document.querySelector('.obsibeans-workspace')?.textContent?.trim()`;
+    const unboundShown = `document.querySelector('.obsibeans-workspace .unbound')?.textContent?.includes(${JSON.stringify(en['binding.executable-not-set'])}) === true`;
+    const click = (selector: string): Promise<unknown> => session?.evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`) ?? Promise.reject(new Error('no session'));
+    const screenshots = process.env.OBSIBEANS_SCREENSHOTS;
+    const screenshot = async (name: string): Promise<void> => {
+      if (!screenshots || !session) return;
+      mkdirSync(screenshots, { recursive: true });
+      const { data } = await session.send('Page.captureScreenshot', { format: 'png' }) as { data: string };
+      writeFileSync(join(screenshots, `${name}.png`), Buffer.from(data, 'base64'));
+    };
 
     await session.waitFor(`typeof app !== 'undefined' && app.workspace.layoutReady`, 'the workspace layout');
     const version = await session.evaluate(`require('electron').ipcRenderer.sendSync('version')`);
@@ -155,7 +163,7 @@ async function main(): Promise<void> {
     check(await session.evaluate(`!!app.plugins.plugins[${id}]`), 'the plugin loads');
 
     await session.evaluate(`app.commands.executeCommandById(${id} + ':open-workspace')`);
-    await session.waitFor(`${workspaceText} === ${JSON.stringify(en['workspace.notBound'])}`, 'the workspace view');
+    await session.waitFor(unboundShown, 'the workspace view');
     await session.evaluate(`app.commands.executeCommandById(${id} + ':open-workspace')`);
     await delay(500);
     check(await session.evaluate(`document.querySelectorAll('.obsibeans-workspace').length === 1`), 'the open command opens one workspace tab and reuses it');
@@ -236,19 +244,75 @@ console.log(JSON.stringify({ beans }));
     check(rebound, 'a refresh notices a changed project config and rebinds');
     await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().status === 'ready'`, 'the rebound project to load');
 
+    // The workspace, navigation, inspector, issue tabs and layout, in the real app.
+    // The sandbox window is 1024px wide; with the sidebars open the pane is narrow, so close them for the wide layout.
+    await session.evaluate(`(app.workspace.leftSplit.collapse(), app.workspace.rightSplit.collapse(), true)`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace')?.clientWidth >= 760`, 'the workspace pane to be wide');
+    const rowIds = `[...document.querySelectorAll('.obsibeans-workspace .row')].map((row) => row.dataset.id).join()`;
+    await session.waitFor(`${rowIds} === 'FX-aaaaa'`, 'the bound workspace to list the bean');
+    check(await session.evaluate(`document.querySelector('.obsibeans-workspace nav [aria-current="page"]')?.textContent.trim() === ${JSON.stringify(en['nav.all'])}`), 'All work is the active navigation entry');
+        await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace .nav-item')].find((item) => item.textContent.trim() === ${JSON.stringify(en['nav.in-progress'])}).click()`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .message')?.textContent.includes(${JSON.stringify(en['list.noMatches'])}) === true`, 'the In progress view to explain it has no matches');
+    await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace button')].find((button) => button.textContent.trim() === ${JSON.stringify(en['list.showAll'])}).click()`);
+    await session.waitFor(`${rowIds} === 'FX-aaaaa'`, 'Show all work to bring the rows back');
+    check(await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.getState().layout.nav === 'all'`), 'the navigation choice is part of the saved workspace layout');
+    await click(`.obsibeans-workspace .row`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .inspector h2')?.textContent === 'Third'`, 'the inspector to show the selected bean');
+    check(true, 'selecting a row shows it in the inspector');
+    await screenshot('workspace-wide');
+    // Only theme variables colour the workspace, so flipping the body class shows the light theme.
+    await session.evaluate(`document.body.classList.replace('theme-dark', 'theme-light')`);
+    await screenshot('workspace-light');
+    await session.evaluate(`document.body.classList.replace('theme-light', 'theme-dark')`);
+
+    await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace .inspector button')].find((button) => button.textContent.trim() === ${JSON.stringify(en['action.openTab'])}).click()`);
+    await session.waitFor(`document.querySelector('.obsibeans-issue .inspector h2')?.textContent === 'Third'`, 'the issue tab to show the bean');
+    writeFileSync(join(vault, 'Task root', 'FX-bbbbb--second.md'), '---\ntitle: Fourth\n---\n');
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().beans.length === 2`, 'the second bean to load');
+    await session.evaluate(`(async () => { const plugin = app.plugins.plugins[${id}]; await plugin.openIssue('FX-aaaaa'); await plugin.openIssue('FX-bbbbb'); await plugin.openIssue('FX-bbbbb'); })()`);
+    check(await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-issue').map((leaf) => leaf.view.beanId).sort().join() === 'FX-aaaaa,FX-bbbbb'`), 'several issue tabs open, one per bean, and an open one is revealed instead of duplicated');
+    await screenshot('issue-tab');
+
+    // Narrow pane: a 500px wide pane stacks list and details, and Back returns to the list.
+    await session.evaluate(`app.workspace.setActiveLeaf(app.workspace.getLeavesOfType('obsibeans-workspace')[0], { focus: true })`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace')?.clientWidth >= 760`, 'the workspace tab to be visible again');
+    await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.contentEl.style.width = '500px'`);
+    await session.waitFor(`!!document.querySelector('.obsibeans-workspace.narrow') || !!document.querySelector('.narrow')`, 'the pane to collapse');
+    check(await session.evaluate(`!document.querySelector('.narrow nav') && !document.querySelector('.narrow .splitter')`), 'a narrow pane collapses navigation and the splitter');
+    await screenshot('workspace-narrow');
+    await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.contentEl.style.width = ''`);
+    await session.waitFor(`!document.querySelector('.narrow')`, 'the pane to expand again');
+
+    // Error state: with Beans gone, a refresh keeps the rows under a stale banner, and Refresh in the banner recovers.
+    renameSync(fakeBeans, `${fakeBeans}.away`);
+    await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace .toolbar button')].find((button) => button.textContent.trim() === ${JSON.stringify(en['action.refresh'])}).click()`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .banner[role="alert"]')?.textContent.includes(${JSON.stringify(en['list.stale'].split('{')[0])}) === true && document.querySelectorAll('.obsibeans-workspace .row').length > 0`, 'the stale banner over the old rows');
+    check(await session.evaluate(`document.querySelector('.obsibeans-workspace footer')?.textContent.includes(${JSON.stringify(en['status.stale'])}) === true`), 'a failed refresh keeps the rows, says they are stale and offers Refresh');
+    await screenshot('workspace-stale');
+    renameSync(`${fakeBeans}.away`, fakeBeans);
+    await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace .banner button')].find((button) => button.textContent.trim() === ${JSON.stringify(en['action.refresh'])}).click()`);
+    await session.waitFor(`!document.querySelector('.obsibeans-workspace .banner[role="alert"]')`, 'the stale banner to clear after Refresh');
+    check(true, 'Refresh in the stale banner recovers when Beans is back');
+
+    // Close view: the command closes only the active Beans tab; Obsidian keeps running.
+    await session.evaluate(`app.workspace.setActiveLeaf(app.workspace.getLeavesOfType('obsibeans-issue')[0], { focus: true })`);
+    await session.evaluate(`app.commands.executeCommandById(${id} + ':close-view')`);
+    await session.waitFor(`app.workspace.getLeavesOfType('obsibeans-issue').length === 1`, 'the close command to close one issue tab');
+    check(await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace').length === 1 && !!document.querySelector('.obsibeans-workspace .row')`), 'closing a Beans tab leaves the workspace and Obsidian running');
+
     const disposed = await session.evaluate(`(window.disposedState = app.plugins.plugins[${id}].state, window.disposedSnapshot = window.disposedState.getSnapshot(), true)`);
     check(disposed, 'a state exists to be released');
     await session.evaluate(`app.plugins.disablePlugin(${id})`);
     check(await session.evaluate(`!app.plugins.plugins[${id}] && !document.querySelector('.obsibeans-workspace')`), 'disabling unloads the plugin and unmounts the workspace');
-    writeFileSync(join(vault, 'Task root', 'FX-bbbbb--late.md'), '---\ntitle: Late\n---\n');
+    writeFileSync(join(vault, 'Task root', 'FX-ccccc--late.md'), '---\ntitle: Late\n---\n');
     await delay(1500);
     check(await session.evaluate(`window.disposedState.getSnapshot() === window.disposedSnapshot`), 'a change after unloading reaches no state: its listeners and timers are released');
     check(spawnSync('pgrep', ['-f', fakeBeans]).status === 1, 'no Beans process is left running');
 
     await session.evaluate(`app.plugins.enablePlugin(${id})`);
     await session.evaluate(`app.commands.executeCommandById(${id} + ':open-workspace')`);
-    await session.waitFor(`${workspaceText} === ${JSON.stringify(en['workspace.notBound'])}`, 'the workspace view after reload');
-    check(true, 'the plugin reloads and opens the workspace again');
+    await session.waitFor(`document.querySelectorAll('.obsibeans-workspace .row').length > 0`, 'the workspace view after reload');
+    check(true, 'the plugin reloads, remembers the trusted executable and lists the beans in the workspace again');
 
     const pluginErrors = session.errors.filter((error) => error.includes(manifest.id));
     session.errors.filter((error) => !pluginErrors.includes(error)).forEach((error) => {

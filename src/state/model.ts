@@ -3,6 +3,9 @@ import type { ProjectRead } from '../adapter/beans-read.ts';
 import type { Change, NewBean } from '../adapter/beans-write.ts';
 import type { InvalidTaskFile } from '../adapter/task-root.ts';
 
+/** Re-exported so views can describe failures without importing the adapter. */
+export type { AdapterError };
+
 /** What the state layer needs from the Beans adapter. The plugin shell builds it from the adapter and the bound project. */
 export interface BeansPort {
   /** Lists the whole project. Must settle (not reject) and stop early when `signal` aborts. */

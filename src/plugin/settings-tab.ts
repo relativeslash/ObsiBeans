@@ -1,5 +1,6 @@
 import { PluginSettingTab, type App, type Plugin, type SettingDefinitionItem } from 'obsidian';
 import { SUPPORTED_BEANS_VERSION } from '../adapter/binding.ts';
+import { DENSITIES } from '../views/host.ts';
 import { t } from '../views/i18n.ts';
 import { type BindingState, type ObsiBeansSettings, type SettingsHost } from './settings.ts';
 
@@ -58,16 +59,32 @@ export class ObsiBeansSettingTab extends PluginSettingTab {
           },
         },
       ],
+    }, {
+      type: 'group',
+      heading: t('settings.view.heading'),
+      items: [{
+        name: t('settings.density.name'),
+        desc: t('settings.density.desc'),
+        control: { type: 'dropdown', key: 'density', options: { comfortable: t('settings.density.comfortable'), compact: t('settings.density.compact') } },
+      }],
     }];
   }
 
   override getControlValue(key: string): unknown {
-    return TEXT_KEYS.includes(key) ? this.host.settings[key as keyof ObsiBeansSettings] : undefined;
+    return TEXT_KEYS.includes(key) || key === 'density' ? this.host.settings[key as keyof ObsiBeansSettings] : undefined;
   }
 
   override async setControlValue(key: string, value: unknown): Promise<void> {
+    if (key === 'density') {
+      const density = DENSITIES.find((one) => one === value);
+      if (density) {
+        this.host.settings.density = density;
+        await this.host.saveSettings();
+      }
+      return;
+    }
     if (!TEXT_KEYS.includes(key) || typeof value !== 'string') return;
-    this.host.settings[key as keyof ObsiBeansSettings] = value.trim();
+    this.host.settings[key as 'executable' | 'config'] = value.trim();
     await this.host.saveSettings();
     await this.host.rebind();
   }

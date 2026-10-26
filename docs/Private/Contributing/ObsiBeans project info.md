@@ -70,8 +70,8 @@ Upgrades follow `ENG-BUILD-003`: change the catalog entry, run `yarn install`, r
 | Path | Holds |
 | --- | --- |
 | `src/plugin/` | Plugin shell: `main.ts` (bundle entry), `settings.ts` (stored settings and the settings host contract), settings tab, command and view registration, project binding lifecycle, vault event routing, the `BeansPort` built from the adapter, draft storage in `data.json` |
-| `src/views/` | `ItemView` hosts, Svelte components, the localization API (`i18n.ts`) and English catalog (`messages.en.ts`) |
-| `src/state/` | Shared application state and actions of one bound project: `workspace-state.ts` (`WorkspaceState`: cache, filters, selection, mutations, drafts, snapshot), `loader.ts` (debounced newest-wins loading and the parse retry), `filters.ts` (default order and filter matching), `drafts.ts` (stored-draft parsing and classification), `model.ts` (types and the `BeansPort` it needs). Imports adapter types only |
+| `src/views/` | `ItemView` hosts (`workspace-view.ts`: `WorkspaceView`, `IssueView`), Svelte components (`Workspace`, `Navigation`, `WorkList`, `Inspector`, `StatusBar`, `IssueTab`), `host.ts` (what views need from the shell), `follow.svelte.ts` (reactive state and snapshot), `layout.ts` (saved layout), `errors.ts`, the localization API (`i18n.ts`) and English catalog (`messages.en.ts`) |
+| `src/state/` | Shared application state and actions of one bound project: `workspace-state.ts` (`WorkspaceState`: cache, filters, selection, mutations, drafts, snapshot), `loader.ts` (debounced newest-wins loading and the parse retry), `filters.ts` (default order and filter matching), `navigation.ts` (built-in navigation filters, relations of a bean, back trail), `drafts.ts` (stored-draft parsing and classification), `model.ts` (types and the `BeansPort` it needs). Imports adapter types only |
 | `src/adapter/` | Beans process adapter: `process.ts` (bounded process execution and `ProcessRunner` ownership), `binding.ts` (executable trust, project and task-root binding, `configUnchanged`, `runBeans`), `task-root.ts` (task-root file scan), `beans-model.ts` (value lists, data shapes, error variants, local validation), `beans-graphql.ts` (one GraphQL call, error classification, response field readers), `beans-read.ts` (list, detail, readiness, blocking graph, task-root index), `beans-guard.ts` (revision hash and frontmatter preservation check), `beans-write.ts` (`createBean`, `mutateBean`) |
 | `test/<layer>/` | Headless tests per layer; `test/tools/` tests the gates |
 | `test/support/obsidian.ts` | Runtime stand-in for the `obsidian` module in tests, plus `bridge()` for the compile-time type cast |
@@ -96,7 +96,7 @@ All commands run from the repository root and were verified on 2026-10-26.
 | Tests without coverage | `yarn test` |
 | Tests with per-module and changed-line coverage | `yarn coverage` |
 | Development bundle in `dist/` | `yarn build` |
-| Native-window smoke test (builds first) | `yarn test:native` |
+| Native-window smoke test (builds first); set `OBSIBEANS_SCREENSHOTS=/dir` to also save PNG screenshots | `yarn test:native` |
 | Process, binding and read/write adapter against the audited release binary (optional, needs the binary) | `OBSIBEANS_BEANS_RELEASE=/absolute/path/to/beans yarn vitest run test/adapter/beans-release.test.ts test/adapter/beans-adapter-release.test.ts` |
 
 `yarn build` writes `dist/main.js` (CommonJS, unminified, inline source map) and would add `dist/styles.css` when components declare styles. Two builds produce identical bytes, also across Node 24 and 26 and across checkout locations. Release packaging is not set up; it belongs to the packaging task.

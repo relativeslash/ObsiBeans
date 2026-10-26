@@ -1,4 +1,4 @@
-import { FileSystemAdapter, parseYaml, Plugin } from 'obsidian';
+import { FileSystemAdapter, ItemView, parseYaml, Plugin } from 'obsidian';
 import type { BeansContext } from '../adapter/beans-graphql.ts';
 import { PRIORITIES, STATUSES, TYPES } from '../adapter/beans-model.ts';
 import { listBeans } from '../adapter/beans-read.ts';
@@ -9,12 +9,13 @@ import { parseDrafts } from '../state/drafts.ts';
 import type { BeansPort, Draft } from '../state/model.ts';
 import { WorkspaceState } from '../state/workspace-state.ts';
 import { t } from '../views/i18n.ts';
-import { WORKSPACE_VIEW_TYPE, WorkspaceView } from '../views/workspace-view.ts';
+import type { Density, WorkspaceHost } from '../views/host.ts';
+import { ISSUE_VIEW_TYPE, IssueView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../views/workspace-view.ts';
 import { parseSettings, type BindingState, type ObsiBeansSettings, type SettingsHost } from './settings.ts';
-import { ObsiBeansSettingTab } from './settings-tab.ts';
+import { describeBinding, ObsiBeansSettingTab } from './settings-tab.ts';
 
 /** Plugin shell. Everything registered here is released by Obsidian when the plugin unloads. */
-export default class ObsiBeansPlugin extends Plugin implements SettingsHost {
+export default class ObsiBeansPlugin extends Plugin implements SettingsHost, WorkspaceHost {
   override settings: ObsiBeansSettings = parseSettings(undefined);
   binding: BindingState;
   /** Owns every Beans process of this session. */
@@ -30,9 +31,12 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost {
     const stored = await this.loadData() as unknown;
     this.settings = parseSettings(stored);
     this.drafts = parseDrafts(typeof stored === 'object' && stored !== null && 'drafts' in stored ? stored.drafts : undefined);
-    this.registerView(WORKSPACE_VIEW_TYPE, (leaf) => new WorkspaceView(leaf));
+    this.registerView(WORKSPACE_VIEW_TYPE, (leaf) => new WorkspaceView(leaf, this));
+    this.registerView(ISSUE_VIEW_TYPE, (leaf) => new IssueView(leaf, this));
+    this.addRibbonIcon('list-checks', t('command.openWorkspace'), () => void this.openWorkspace());
     this.addCommand({ id: 'open-workspace', name: t('command.openWorkspace'), callback: () => this.openWorkspace() });
     this.addCommand({ id: 'refresh', name: t('command.refresh'), callback: () => void this.state?.refresh() });
+    this.addCommand({ id: 'close-view', name: t('command.closeView'), checkCallback: (checking) => this.closeActiveView(checking) });
     const { vault } = this.app;
     this.registerEvent(vault.on('create', (file) => { this.vaultChanged(file.path); }));
     this.registerEvent(vault.on('modify', (file) => { this.vaultChanged(file.path); }));
@@ -74,8 +78,17 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost {
     for (const listener of this.listeners) listener();
   }
 
-  saveSettings(): Promise<void> {
-    return this.persist();
+  get bindingText(): string {
+    return describeBinding(this.binding);
+  }
+
+  get density(): Density {
+    return this.settings.density;
+  }
+
+  async saveSettings(): Promise<void> {
+    await this.persist();
+    this.publish();
   }
 
   /** Settings and drafts share one data file, so every write carries both and writes never overlap. */
@@ -156,6 +169,27 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost {
   private vaultRoot(): string | undefined {
     const { adapter } = this.app.vault;
     return adapter instanceof FileSystemAdapter ? adapter.getBasePath() : undefined;
+  }
+
+  /** Closes the active Beans tab only, never Obsidian. Offered only while one is active. */
+  private closeActiveView(checking: boolean): boolean {
+    const { workspace } = this.app;
+    const leaf = workspace.getActiveViewOfType(ItemView)?.leaf;
+    const type = leaf?.view.getViewType();
+    if (!leaf || (type !== WORKSPACE_VIEW_TYPE && type !== ISSUE_VIEW_TYPE)) return false;
+    if (!checking) leaf.detach();
+    return true;
+  }
+
+  /** Opens the bean in its own tab. A bean that already has a tab is revealed instead of duplicated. */
+  async openIssue(id: string): Promise<void> {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(ISSUE_VIEW_TYPE).find((one) => one.view instanceof IssueView && one.view.beanId === id);
+    if (!leaf) {
+      leaf = workspace.getLeaf('tab');
+      await leaf.setViewState({ type: ISSUE_VIEW_TYPE, state: { id }, active: true });
+    }
+    await workspace.revealLeaf(leaf);
   }
 
   /** Reveals the existing workspace tab, or opens one in a new tab. */
