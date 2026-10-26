@@ -14,7 +14,18 @@ Use the Beans skill to search for an existing task before creating work records 
 
 ## V1 implementation entry point
 
-The owner accepted the native workspace design as v1. Start with [[docs/Private/Tasks/OB-fgjv--obsibeans-v1-native-workspace.md|the v1 implementation milestone]] for scope, execution rules and the work index. Its explicit dependencies identify ready leaf tasks; epic and milestone records are completion gates, not standalone coding assignments. The first leaves resolve open scope decisions and audit the selected Beans contract/TUI parity. No plugin or build toolchain was implemented by planning.
+The owner accepted the native workspace design as v1. Start with [[docs/Private/Tasks/OB-fgjv--obsibeans-v1-native-workspace.md|the v1 implementation milestone]] for scope, execution rules and the work index. Its explicit dependencies identify ready leaf tasks; epic and milestone records are completion gates, not standalone coding assignments.
+
+## Plugin development
+
+A plugin skeleton with quality gates exists: a workspace view, an open command and a settings tab, without Beans features. [[docs/Private/Contributing/ObsiBeans project info.md|Project information]] owns the toolchain pins, source layout, module boundaries and verified commands. Run `yarn install --immutable` once, then `yarn verify` before handing off any code change; it is what CI runs.
+
+- Put new production code under the layer directory that owns it. `yarn fitness` rejects files outside a layer, forbidden imports and import cycles. Change the rules only together with the design note's module boundaries.
+- Route every UI string through `t()` with a new key in `src/views/messages.en.ts`. Never pass inline prose.
+- Obsidian 1.14 renders settings from `getSettingDefinitions()`. `PluginSettingTab.display()` is deprecated, and lint rejects deprecated APIs.
+- Headless tests get `obsidian` from `test/support/obsidian.ts`. Extend that stub only with API that production code uses. Use `bridge()` to cross between stub and real types instead of double assertions. Add `// @vitest-environment jsdom` to tests that render.
+- `yarn typecheck` runs svelte-check, which checks both `.ts` and `.svelte` files and fails on Svelte accessibility warnings.
+- The stub cannot prove real Obsidian behavior. After changing lifecycle, commands, views or settings, run `yarn test:native`. It needs a desktop session and runs a separate Obsidian instance, so the user's vaults are untouched.
 
 ## Beans backend
 
@@ -22,6 +33,6 @@ Before writing adapter, state, or view code, read [[docs/Private/Design/Beans 0.
 
 ## Growing this guide
 
-This guide currently establishes skills and navigation. Expand it as development produces verified knowledge: module entry points, setup and test workflows, plugin reload/debugging hints, Beans integration pitfalls, and release checks. Link to authoritative project information or focused guides rather than duplicating their rules and version tables.
+Expand this guide as development produces verified knowledge: module entry points, debugging hints, Beans integration pitfalls, and release checks. Link to authoritative project information or focused guides rather than duplicating their rules and version tables.
 
 Do not describe planned commands, modules, or integrations as implemented. Record unresolved design questions in design notes and track implementation work in Beans. The [[docs/README.md|documentation index]] provides the current starting points.

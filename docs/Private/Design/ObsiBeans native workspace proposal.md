@@ -1,6 +1,6 @@
 ---
 created_at: 2026-10-26T01:16:31Z
-updated_at: 2026-10-26T02:32:50Z
+updated_at: 2026-10-26T09:24:28Z
 ---
 
 # ObsiBeans native workspace proposal
@@ -264,7 +264,7 @@ Swimlanes are a per-view board option. With swimlanes set to `parent`, the board
 
 ### Module boundaries
 
-The architecture layers above become these dependency rules. The scaffold chooses exact paths and enforces the rules with architecture checks.
+The architecture layers above become these dependency rules. The chosen paths, their interpretation and the architecture check that enforces them are in [[docs/Private/Contributing/ObsiBeans project info.md#Source layout and module boundaries|project information]].
 
 | Layer | Owns | May depend on |
 | --- | --- | --- |

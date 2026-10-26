@@ -1,0 +1,9 @@
+{
+  "id": "obsibeans",
+  "name": "ObsiBeans",
+  "version": "0.0.0",
+  "minAppVersion": "1.14.5",
+  "description": "Native workspace for Beans work tracking.",
+  "author": "Protomatter Studio",
+  "isDesktopOnly": true
+}

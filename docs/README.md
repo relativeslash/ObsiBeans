@@ -11,7 +11,7 @@ The repository root is the Obsidian vault; `docs/` is the authoritative document
 | TUI behaviors and their required native equivalents | [[docs/Private/Design/Beans 0.4.2 TUI parity matrix.md]] |
 | Start v1 development: scope gates, dependencies, acceptance criteria and agent handoffs | [[docs/Private/Tasks/OB-fgjv--obsibeans-v1-native-workspace.md]] |
 | Shared-standard inheritance and optional local overrides | [[docs/Private/Contributing/README.md]] |
-| Selected compatibility versions and project information | [[docs/Private/Contributing/ObsiBeans project info.md]] |
+| Compatibility baseline, toolchain, source layout and verified commands | [[docs/Private/Contributing/ObsiBeans project info.md]] |
 | AI skills and evolving development guidance | [[docs/Private/Guides/ObsiBeans AI working guide.md]] |
 | Shared standards and contextual-loading index | [[docs/Private/Contributing/Standards/README.md]] |
 
