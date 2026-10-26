@@ -3,7 +3,5 @@
   "nativeMenus": false,
   "baseFontSize": 16,
   "baseFontSizeAction": false,
-  "enabledCssSnippets": [
-    "table-ids"
-  ]
+  "enabledCssSnippets": []
 }

@@ -9,7 +9,7 @@
   "titleGenerationModel": "openai-codex/gpt-6-astra",
   "excludedTags": [],
   "mediaFolder": "",
-  "systemPrompt": "Start by reading AGENTS.md",
+  "systemPrompt": "Start each session by reading AGENTS.md.",
   "sharedEnvironmentVariables": "",
   "envSnippets": [],
   "customContextLimits": {},

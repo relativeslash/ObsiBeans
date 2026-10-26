@@ -1,0 +1,2641 @@
+/* Obsidian Terminal Styles */
+
+/* ==================== Settings Header ==================== */
+.terminal-settings-container {
+  --setting-items-background: transparent;
+  --setting-items-divider-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-settings-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.settings-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.settings-title-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-title-icon svg {
+  display: block;
+  color: var(--text-accent);
+}
+
+.settings-title {
+  margin: 0;
+  padding: 0;
+  font-weight: 700;
+  font-size: 1.5em;
+  line-height: 1;
+}
+
+.settings-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.settings-feedback {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.settings-feedback a {
+  color: var(--text-accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.settings-feedback a:hover {
+  color: var(--text-accent-hover);
+  text-decoration: underline;
+}
+
+.settings-header-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--interactive-accent) 8%, transparent),
+      color-mix(in srgb, var(--background-secondary) 92%, transparent)
+    );
+  color: var(--text-normal);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.1s ease, background-color 0.15s ease;
+}
+
+.settings-header-button:hover {
+  border-color: color-mix(in srgb, var(--interactive-accent) 42%, var(--background-modifier-border));
+  transform: translateY(-1px);
+}
+
+.settings-header-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.settings-title-changelog-button {
+  margin-left: 6px;
+}
+
+.terminal-settings-content {
+  flex: 1;
+}
+
+/* Declarative rows host the same cards as the legacy settings tab. */
+.terminal-settings-container .setting-item.terminal-settings-section {
+  display: block;
+  padding: 0;
+  border-top: 0;
+}
+
+.terminal-settings-validation {
+  margin-top: 8px;
+}
+.terminal-settings-validation.is-valid {
+  color: var(--text-success);
+}
+.terminal-settings-validation.is-invalid {
+  color: var(--text-error);
+}
+
+/* ==================== Rename Terminal Modal Styles ==================== */
+/* Modal container */
+.rename-terminal-modal .modal {
+  max-width: 420px;
+  padding: 20px 24px;
+}
+
+/* Title section */
+.rename-terminal-modal .modal-title {
+  margin-bottom: 16px;
+}
+
+.modal-title-text {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-normal);
+  line-height: 1.4;
+}
+
+/* Input section container */
+.rename-terminal-modal .rename-input-container {
+  margin-bottom: 20px;
+}
+
+/* Input label */
+.rename-terminal-modal .rename-input-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Input field */
+.rename-terminal-modal .rename-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-normal);
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 5px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.rename-terminal-modal .rename-input:hover {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.rename-terminal-modal .rename-input:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.rename-terminal-modal .rename-input::placeholder {
+  color: var(--text-faint);
+}
+
+/* Button container */
+.rename-terminal-modal .modal-button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* Base button styles */
+.rename-terminal-modal .modal-button-container button {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  min-width: 70px;
+}
+
+.rename-terminal-modal .modal-button-container button:hover {
+  transform: translateY(-1px);
+}
+
+.rename-terminal-modal .modal-button-container button:active {
+  transform: translateY(0);
+}
+
+/* Cancel button */
+.rename-terminal-modal .modal-button-container button.mod-cancel {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-form-field);
+}
+
+.rename-terminal-modal .modal-button-container button.mod-cancel:hover {
+  background-color: var(--background-modifier-form-field-highlighted);
+}
+
+/* Confirm button */
+.rename-terminal-modal .modal-button-container button.mod-cta {
+  color: var(--text-on-accent);
+  background-color: var(--interactive-accent);
+}
+
+.rename-terminal-modal .modal-button-container button.mod-cta:hover {
+  background-color: var(--interactive-accent-hover);
+}
+
+/* Dark theme adjustments */
+.theme-dark .rename-terminal-modal .rename-input {
+  background-color: var(--background-primary-alt);
+}
+
+/* Animation effects */
+.rename-terminal-modal .modal-content {
+  animation: rename-modal-fade-in 0.2s ease-out;
+}
+
+@keyframes rename-modal-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== Preset Script Modal Styles ==================== */
+.preset-script-modal .modal {
+  width: min(860px, calc(100vw - 48px));
+  max-width: 860px;
+  max-height: min(90vh, 850px);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preset-script-modal .modal > .modal-close-button {
+  flex-shrink: 0;
+}
+
+.preset-script-modal .modal-title {
+  flex-shrink: 0;
+}
+
+.preset-script-modal .modal-button-container {
+  flex-shrink: 0;
+}
+
+/* ==================== Changelog Modal Styles ==================== */
+/* The class is added to the modal element itself, so it must not be written as
+   a descendant of it: `.termy-changelog-modal .modal` never matched anything. */
+.modal.termy-changelog-modal {
+  width: min(900px, calc(100vw - 48px));
+  max-width: 900px;
+  max-height: min(80vh, 900px);
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Obsidian 1.14+ inserts an empty `.modal-header` above the content and gives it
+   `margin-bottom: 0.75em`, which would leave a blank strip above the shell. */
+.modal.termy-changelog-modal .modal-header {
+  height: 0;
+  margin-bottom: 0;
+}
+
+/* Seat the platform close button on the header actions row (30px box, 24px from
+   the right edge) so it lines up with the version badge and icon buttons. */
+.modal.termy-changelog-modal .modal-header-button,
+.modal.termy-changelog-modal .modal-close-button {
+  top: 22px;
+  inset-inline-end: 24px;
+  width: 30px;
+  height: 30px;
+}
+
+.termy-changelog-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: min(80vh, 900px);
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--interactive-accent) 10%, transparent),
+      transparent 32%
+    ),
+    var(--background-primary);
+}
+
+.termy-changelog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  /* Right padding reserves room for the close button: 24px + 30px + 8px gap */
+  padding: 22px 62px 16px 24px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--background-secondary) 82%, transparent),
+      color-mix(in srgb, var(--background-primary) 96%, transparent)
+    );
+}
+
+.termy-changelog-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.termy-changelog-subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.termy-changelog-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.termy-changelog-version-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--interactive-accent) 30%, var(--background-modifier-border));
+  background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
+  color: var(--interactive-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.termy-changelog-action {
+  width: 30px;
+  height: 30px;
+}
+
+.termy-changelog-body {
+  overflow-y: auto;
+  padding: 22px 24px 26px;
+}
+
+.termy-changelog-loading,
+.termy-changelog-error {
+  padding: 22px 18px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--background-secondary) 88%, transparent);
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.termy-changelog-error {
+  color: var(--text-error);
+}
+
+.termy-changelog-markdown {
+  line-height: 1.7;
+}
+
+.termy-changelog-markdown > :first-child {
+  margin-top: 0;
+}
+
+.termy-changelog-markdown h3 {
+  margin-top: 24px;
+}
+
+.termy-changelog-markdown ul {
+  margin-block: 10px 18px;
+}
+
+.termy-changelog-markdown li {
+  margin-block: 6px;
+}
+
+.preset-script-modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preset-script-built-in-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--interactive-accent) 16%, transparent);
+  color: var(--interactive-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.preset-script-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.preset-script-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preset-script-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.preset-script-input,
+.preset-script-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-normal);
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 5px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.preset-script-textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: var(--font-monospace);
+}
+
+.preset-script-input:hover,
+.preset-script-textarea:hover {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.preset-script-input:focus,
+.preset-script-textarea:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.preset-script-input::placeholder,
+.preset-script-textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.preset-workflow-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-workflow-action-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 28px 28px 28px;
+  gap: 8px;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--background-primary) 90%, var(--background-secondary));
+}
+
+.preset-workflow-action-row.is-disabled {
+  opacity: 0.58;
+}
+
+.preset-workflow-action-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  align-self: start;
+  padding-top: 4px;
+}
+
+.preset-workflow-action-type,
+.preset-workflow-action-value {
+  width: 100%;
+  height: 30px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+}
+
+.preset-workflow-action-type {
+  grid-column: 2;
+  grid-row: 1;
+  max-width: 240px;
+}
+
+.preset-workflow-action-value-wrap {
+  grid-column: 2 / 6;
+  grid-row: 2;
+  min-width: 0;
+  position: relative;
+}
+
+.preset-workflow-action-value {
+  font-family: var(--font-monospace);
+}
+
+.preset-command-suggestion-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  display: none;
+  flex-direction: column;
+  max-height: min(45vh, 360px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid color-mix(in srgb, var(--interactive-accent) 28%, var(--background-modifier-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background-primary) 97%, transparent);
+  box-shadow: 0 12px 30px color-mix(in srgb, black 18%, transparent);
+  z-index: 12;
+  scrollbar-width: thin;
+}
+
+.preset-command-suggestion-panel.is-open {
+  display: flex;
+}
+
+.preset-command-suggestion-panel::-webkit-scrollbar {
+  width: 10px;
+}
+
+.preset-command-suggestion-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preset-command-suggestion-panel::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-muted) 50%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.preset-command-suggestion-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 72%, transparent);
+  cursor: pointer;
+}
+
+.preset-command-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.preset-command-suggestion-item:hover,
+.preset-command-suggestion-item.is-active {
+  background: color-mix(in srgb, var(--interactive-accent) 12%, var(--background-secondary));
+}
+
+.preset-command-suggestion-name {
+  color: var(--text-normal);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.preset-command-suggestion-id {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  font-family: var(--font-monospace);
+  word-break: break-all;
+}
+
+.preset-workflow-action-note {
+  width: 100%;
+  min-height: 64px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  resize: vertical;
+  grid-column: 2 / 6;
+  grid-row: 3;
+  line-height: 1.45;
+}
+
+.preset-workflow-action-note::placeholder {
+  color: var(--text-faint);
+}
+
+.preset-workflow-action-type:focus,
+.preset-workflow-action-value:focus,
+.preset-workflow-action-note:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.preset-workflow-action-delete {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.preset-workflow-action-move-up {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.preset-workflow-action-move-down {
+  grid-column: 5;
+  grid-row: 1;
+}
+
+.preset-workflow-action-add {
+  align-self: flex-start;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.preset-workflow-action-add:hover {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
+}
+
+.preset-workflow-action-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* Icon selector */
+.preset-script-icon-selector {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preset-script-icon-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  background-color: var(--background-secondary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.preset-script-icon-preview:hover {
+  border-color: var(--interactive-accent);
+}
+
+.preset-script-icon-picker-panel {
+  position: absolute;
+  top: 46px;
+  left: 0;
+  min-width: 260px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  display: none;
+  z-index: 10;
+}
+
+.preset-script-icon-picker-panel.is-open {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-script-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap: 8px;
+}
+
+.preset-script-icon-option {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background-color: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+
+.preset-script-icon-option:hover {
+  border-color: var(--interactive-accent);
+  transform: translateY(-1px);
+}
+
+.preset-script-icon-option.is-active {
+  border-color: var(--interactive-accent);
+  color: var(--text-normal);
+  box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.preset-script-icon-preview svg {
+  width: 20px;
+  height: 20px;
+}
+
+.preset-script-custom-icon svg {
+  color: var(--preset-script-icon-color, currentColor);
+}
+
+.preset-script-black-white-icon svg {
+  color: #000000;
+}
+
+.theme-dark .preset-script-black-white-icon svg {
+  color: #ffffff;
+}
+
+/*
+ * Engraving-style brand marks (e.g. Hermes Agent) carry a lot of
+ * fine line detail that disappears on a dark Obsidian theme. Wrap
+ * the SVG in a dedicated chip element with a fixed light surface and
+ * dark ink so the glyph reads identically in the status bar menu,
+ * settings list, icon picker grid, and preview button — all of
+ * which use different host backgrounds.
+ */
+.preset-script-solid-bg-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border-radius: 4px;
+  padding: 1px;
+  box-sizing: content-box;
+  line-height: 0;
+}
+
+.preset-script-solid-bg-chip svg {
+  color: #1f1f1f;
+  display: block;
+}
+
+.preset-script-emoji-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.preset-script-icon-preview.preset-script-emoji-icon {
+  font-size: 20px;
+}
+
+.preset-script-icon-option.preset-script-emoji-icon {
+  font-size: 18px;
+}
+
+.preset-script-icon.preset-script-emoji-icon {
+  font-size: 18px;
+}
+
+.preset-scripts-menu-icon.preset-script-emoji-icon {
+  font-size: 16px;
+}
+
+.preset-script-icon-preview.preset-script-custom-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Default Obsidian icon size */
+.preset-script-icon-option svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Custom Simple Icons size - requires higher specificity */
+.preset-script-icon-option.preset-script-custom-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.preset-script-icon-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.preset-script-icon-page-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.preset-script-icon-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.preset-script-icon-page-info {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Local native binary management */
+.termy-binary-setting .setting-item-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.termy-binary-setting .setting-item-control {
+  flex-wrap: wrap;
+}
+
+.termy-binary-status {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 9px;
+  font-size: var(--font-smallest);
+  font-weight: 600;
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.termy-binary-status.is-ready {
+  background: color-mix(in srgb, var(--color-green) 18%, transparent);
+  color: var(--color-green);
+}
+
+.termy-binary-status.is-missing,
+.termy-binary-status.is-update-required,
+.termy-binary-status.is-unknown-version {
+  background: color-mix(in srgb, var(--color-orange) 18%, transparent);
+  color: var(--color-orange);
+}
+
+.termy-binary-status.is-unavailable,
+.termy-binary-error {
+  color: var(--text-error);
+}
+
+.termy-binary-detail,
+.termy-binary-error {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+
+.termy-binary-setting [hidden] {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .termy-binary-setting {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .termy-binary-setting .setting-item-control {
+    justify-content: flex-start;
+  }
+}
+
+/* ==================== Node Runtime Settings ==================== */
+.node-runtime-settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.node-runtime-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.node-runtime-header-text {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.node-runtime-header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.node-runtime-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.node-runtime-desc {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.node-runtime-refresh-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.node-runtime-refresh-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.node-runtime-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.node-runtime-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.node-runtime-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: var(--background-secondary);
+}
+
+.node-runtime-row-label {
+  flex: 0 0 auto;
+  min-width: 52px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.node-runtime-row-meta {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.node-runtime-row-version {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.node-runtime-row-version.is-ready {
+  color: var(--text-success);
+}
+
+.node-runtime-row-version.is-not-installed {
+  color: var(--text-faint);
+}
+
+.node-runtime-row-path {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  font-family: var(--font-monospace);
+  font-size: 11px;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  white-space: normal;
+}
+
+.node-runtime-custom-path-hint {
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--interactive-accent) 8%, transparent);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.node-runtime-custom-path-setting {
+  padding-top: 4px;
+  flex-wrap: wrap;
+}
+
+.node-runtime-custom-path-setting .setting-item-info {
+  flex: 1 1 100%;
+}
+
+.node-runtime-custom-path-setting .setting-item-control {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.node-runtime-custom-path-setting .setting-item-control input[type="text"] {
+  width: 100%;
+}
+
+/* ==================== Preset Scripts List ==================== */
+.preset-scripts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
+.preset-scripts-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.preset-scripts-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preset-scripts-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.preset-scripts-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.preset-scripts-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.preset-scripts-refresh-btn,
+.preset-scripts-add-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.preset-scripts-add-btn {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.preset-scripts-add-btn:hover {
+  background-color: var(--interactive-accent-hover);
+  transform: translateY(-1px);
+}
+
+.preset-script-launcher-install {
+  padding: 4px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.preset-scripts-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 6px;
+}
+
+.preset-script-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background-color: var(--background-primary);
+  cursor: grab;
+  transition: box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.preset-script-row:active {
+  cursor: grabbing;
+}
+
+.preset-script-row.is-dragging {
+  opacity: 0.4;
+}
+
+.preset-script-row.drag-over-above {
+  box-shadow: inset 0 2px 0 0 var(--interactive-accent);
+}
+
+.preset-script-row.drag-over-below {
+  box-shadow: inset 0 -2px 0 0 var(--interactive-accent);
+}
+
+.preset-script-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  cursor: grab;
+}
+
+.preset-script-drag-handle:active {
+  cursor: grabbing;
+}
+
+.preset-script-drag-handle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.preset-script-row.is-disabled {
+  opacity: 0.6;
+}
+
+.preset-script-row.is-disabled .preset-script-name,
+.preset-script-row.is-disabled .preset-script-command {
+  color: var(--text-faint);
+}
+
+.preset-script-toggle {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.preset-script-toggle .checkbox-container {
+  margin: 0;
+}
+
+.preset-script-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.preset-script-icon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.preset-script-icon.preset-script-custom-icon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.preset-script-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preset-script-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preset-script-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-normal);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset-script-command {
+  font-size: 12px;
+  color: var(--text-muted);
+  word-break: break-word;
+}
+
+.preset-script-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.preset-script-actions .clickable-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==================== Preset Scripts Status Menu ==================== */
+.terminal-status-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  transition: opacity 0.2s ease;
+}
+
+.terminal-status-bar.is-clickable {
+  cursor: pointer;
+}
+
+.terminal-status-bar.is-hidden {
+  display: none;
+}
+
+.terminal-status-bar:hover {
+  opacity: 0.8;
+}
+
+.terminal-status-bar svg {
+  flex-shrink: 0;
+}
+
+.terminal-status-bar span {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.preset-scripts-menu {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  max-width: min(360px, calc(100vw - 16px));
+  max-height: min(60vh, 420px);
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  z-index: var(--layer-menu, 35);
+}
+
+.preset-scripts-menu-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 6px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.preset-scripts-menu-footer {
+  flex-shrink: 0;
+  padding: 4px 0 6px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.preset-scripts-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--text-normal);
+  cursor: pointer;
+  user-select: none;
+  min-width: 0;
+}
+
+.preset-scripts-menu-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.preset-scripts-menu-item.is-disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.preset-scripts-menu-item.preset-scripts-menu-add {
+  color: var(--text-accent);
+}
+
+.preset-scripts-menu-item.preset-scripts-menu-add:hover {
+  color: var(--text-accent-hover);
+}
+
+.preset-scripts-menu-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preset-scripts-menu-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.preset-scripts-menu-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preset-scripts-menu-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.preset-scripts-menu-item:hover .preset-scripts-menu-actions {
+  opacity: 1;
+}
+
+.preset-scripts-menu-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-faint);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+  margin-right: -4px;
+}
+
+.preset-scripts-menu-drag-handle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.preset-scripts-menu-item:hover .preset-scripts-menu-drag-handle {
+  opacity: 1;
+}
+
+.preset-scripts-menu-item.is-dragging {
+  opacity: 0.4;
+}
+
+.preset-scripts-menu-item.drag-over-above {
+  box-shadow: inset 0 2px 0 0 var(--interactive-accent);
+}
+
+.preset-scripts-menu-item.drag-over-below {
+  box-shadow: inset 0 -2px 0 0 var(--interactive-accent);
+}
+
+.preset-scripts-menu-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.preset-scripts-menu-action-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.preset-scripts-menu-action-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.preset-scripts-menu-action-delete:hover {
+  color: var(--text-error);
+}
+
+/* Install/upgrade guidance uses the accent color and waits for detection. */
+.preset-scripts-menu-action-setup {
+  color: var(--interactive-accent);
+}
+
+.preset-scripts-menu-action-setup:hover {
+  background: color-mix(in srgb, var(--interactive-accent) 18%, transparent);
+  color: var(--interactive-accent);
+}
+
+.preset-scripts-menu-action-setup.is-hidden,
+.preset-scripts-menu-action-installations.is-hidden {
+  display: none;
+}
+
+/* Preset workflow tooltip (status bar menu) — supports multi-line content */
+.tooltip.preset-script-tooltip {
+  white-space: pre-line;
+  text-align: left;
+  max-width: 360px;
+  word-break: break-word;
+}
+
+.preset-script-delete {
+  color: var(--text-error);
+}
+
+/* Settings page "Update now" affordance for AI launcher rows. Hidden
+   by default and revealed when readiness === 'update-available'. */
+.preset-script-launcher-update {
+  color: var(--interactive-accent);
+}
+
+.preset-script-launcher-update:hover {
+  background: color-mix(in srgb, var(--interactive-accent) 18%, transparent);
+  color: var(--interactive-accent);
+}
+
+.preset-script-launcher-install.is-hidden,
+.preset-script-launcher-update.is-hidden {
+  display: none;
+}
+
+.termy-always-on-top-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  margin-inline-start: 5px;
+  color: color-mix(in srgb, var(--text-muted) 70%, var(--interactive-accent));
+  flex: 0 0 auto;
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.termy-always-on-top-tab-badge svg {
+  width: 11px;
+  height: 11px;
+  stroke-width: 2.1;
+}
+
+.workspace-tab-header.is-active .termy-always-on-top-tab-badge {
+  color: var(--interactive-accent);
+  opacity: 1;
+}
+
+/* ==================== Terminal Styles ==================== */
+/* Workspace leaf content - terminal view */
+.workspace-leaf-content[data-type="terminal-view"] {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+}
+/* Hide the terminal view title bar */
+.workspace-leaf-content[data-type="terminal-view"] .view-header {
+  display: none;
+}
+.workspace-leaf-content[data-type="terminal-view"] .view-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+/* Terminal view main container */
+.terminal-view-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  background-color: var(--terminal-bg-color, var(--background-primary));
+}
+/* Terminal search bar */
+.terminal-search-container {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+}
+.terminal-search-container.is-visible {
+  display: flex;
+}
+.terminal-search-input {
+  flex: 1;
+  min-width: 0;
+}
+.terminal-search-btn {
+  width: 24px;
+  height: 24px;
+}
+/* Terminal view main container - with background image */
+.terminal-view-container.has-background-image {
+  background-color: transparent;
+}
+/* Terminal container */
+.terminal-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background-color: var(--terminal-bg-color, var(--background-primary));
+  isolation: isolate;
+}
+/* Terminal container - with background image */
+.terminal-container.has-background-image {
+  background-color: transparent;
+}
+.terminal-drop-hint {
+  --terminal-drop-mask-color: color-mix(in srgb, var(--background-primary) 74%, transparent);
+  --terminal-drop-border-color: color-mix(
+    in srgb,
+    var(--interactive-accent) 48%,
+    var(--background-modifier-border) 52%
+  );
+  --terminal-drop-card-bg: color-mix(in srgb, var(--background-primary) 90%, transparent);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 2.6vw, 24px);
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      color-mix(in srgb, var(--interactive-accent) 10%, transparent),
+      transparent 64%
+    ),
+    linear-gradient(var(--terminal-drop-mask-color), var(--terminal-drop-mask-color));
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  z-index: 7;
+  transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.terminal-drop-hint::before {
+  content: '';
+  position: absolute;
+  inset: clamp(8px, 1.6vw, 14px);
+  border-radius: 12px;
+  border: 1px dashed var(--terminal-drop-border-color);
+  background: color-mix(in srgb, var(--background-secondary) 38%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--background-modifier-border) 60%, transparent);
+  opacity: 0;
+  transform: scale(0.985);
+  transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1), transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.terminal-drop-hint__text {
+  position: relative;
+  z-index: 1;
+  max-width: min(88%, 560px);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--interactive-accent) 30%, var(--background-modifier-border) 70%);
+  background: var(--terminal-drop-card-bg);
+  color: var(--text-normal);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-shadow:
+    0 10px 28px color-mix(in srgb, black 18%, transparent),
+    0 1px 0 color-mix(in srgb, white 24%, transparent) inset;
+  transform: translateY(8px) scale(0.985);
+  opacity: 0;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.terminal-container.has-background-image .terminal-drop-hint {
+  --terminal-drop-mask-color: color-mix(in srgb, var(--background-primary) 78%, transparent);
+}
+.terminal-drop-hint.is-visible {
+  opacity: 1;
+}
+.terminal-drop-hint.is-visible::before {
+  opacity: 1;
+  transform: scale(1);
+}
+.terminal-drop-hint.is-visible .terminal-drop-hint__text {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+/* Terminal background image layer - separate background layer; opacity affects only the background */
+.terminal-background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(
+      rgba(0, 0, 0, var(--terminal-bg-overlay-opacity, 0)),
+      rgba(0, 0, 0, var(--terminal-bg-overlay-opacity, 0))
+    ),
+    var(--terminal-bg-image, none);
+  background-size: var(--terminal-bg-size, cover);
+  background-position: var(--terminal-bg-position, center);
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 0;
+  transform: scale(var(--terminal-bg-scale, 1));
+  transform-origin: center;
+  filter: blur(var(--terminal-bg-blur, 0px));
+}
+/* Terminal instance container - the text layer remains fully opaque */
+.terminal-instance {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+  background-color: transparent;
+  opacity: 1;
+}
+/* ==================== Xterm.js Core Styles ==================== */
+/* Xterm main container */
+.terminal-container .xterm,
+.terminal-instance .xterm {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  padding: 4px;
+  cursor: text;
+  outline: none;
+  opacity: 1;
+}
+/* With a background image, the xterm container background is transparent */
+.terminal-container.has-background-image .xterm {
+  background-color: transparent;
+}
+/* Xterm helper elements - hidden input field */
+.xterm-helpers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -5;
+  opacity: 0;
+  pointer-events: none;
+}
+.xterm-helper-textarea {
+  position: absolute;
+  opacity: 0;
+  left: -9999px;
+  top: -9999px;
+  width: 0;
+  height: 0;
+  z-index: -5;
+  white-space: nowrap;
+  overflow: hidden;
+  resize: none;
+  padding: 0;
+  border: 0;
+  outline: none;
+}
+/* Xterm screen */
+.xterm-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+/* With a background image, the xterm screen background is transparent */
+.terminal-container.has-background-image .xterm-screen {
+  background-color: transparent;
+}
+/* Xterm viewport (scroll container) */
+.xterm-viewport {
+  overflow-y: auto;
+  overflow-x: hidden;
+  cursor: default;
+  position: absolute;
+  right: 0;
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+.terminal-container .xterm-viewport,
+.terminal-container .xterm .xterm-viewport {
+  overflow-y: auto;
+}
+/* With a background image, the viewport background is transparent */
+.terminal-container.has-background-image .xterm-viewport {
+  background-color: transparent;
+}
+.terminal-container.has-background-image .xterm .xterm-viewport,
+.terminal-container.has-background-image .xterm .xterm-scrollable-element {
+  background-color: transparent;
+}
+/* ==================== Cursor Styles ==================== */
+/* Cursor layer - ensure it stays on top */
+.xterm-cursor-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+/* Cursor - block cursor */
+.xterm-cursor {
+  position: absolute;
+  background-color: var(--text-accent);
+  opacity: 1;
+  z-index: 3;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+/* Cursor blink animation */
+.xterm-cursor.xterm-cursor-blink {
+  animation: xterm-cursor-blink 1.2s steps(2, start) infinite;
+}
+@keyframes xterm-cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+/* Cursor style variants */
+.xterm-cursor.xterm-cursor-block {
+  background-color: var(--text-accent);
+  height: 1.2em;
+  width: 1ch;
+}
+.xterm-cursor.xterm-cursor-outline {
+  background-color: transparent;
+  border: 1px solid var(--text-accent);
+  box-sizing: border-box;
+  height: 1.2em;
+  width: 1ch;
+}
+.xterm-cursor.xterm-cursor-bar {
+  background-color: var(--text-accent);
+  width: 1px;
+  height: 1.2em;
+}
+.xterm-cursor.xterm-cursor-underline {
+  background-color: transparent;
+  border-bottom: 1px solid var(--text-accent);
+  height: 1px;
+  bottom: 0;
+  width: 1ch;
+}
+/* ==================== Text and Render Layers ==================== */
+/* Text layer */
+.xterm-text-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: 14px;
+  line-height: 1.2;
+  contain: strict;
+  opacity: var(--terminal-text-opacity, 1);
+}
+/* Link layer */
+.xterm-link-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+/* Selection layer */
+.xterm-selection-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+/* Selected text styles */
+.xterm-selection {
+  position: absolute;
+  background-color: var(--text-selection);
+  opacity: 0.3;
+}
+/* ==================== Canvas Renderer Styles ==================== */
+.xterm-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: var(--terminal-text-opacity, 1);
+}
+/* When there is a background image, the Canvas renderer also needs a transparent background */
+.terminal-container.has-background-image .xterm-canvas,
+.terminal-container.has-background-image canvas {
+  background-color: transparent;
+}
+.terminal-container.has-background-image .xterm .xterm-screen canvas {
+  background-color: transparent;
+}
+/* ==================== Scrollbar Styles ==================== */
+.xterm-viewport::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.xterm-viewport::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+}
+.xterm-viewport::-webkit-scrollbar-thumb {
+  background: var(--background-modifier-border);
+  border-radius: 5px;
+}
+.xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+.xterm-viewport::-webkit-scrollbar-corner {
+  background: var(--background-secondary);
+}
+.terminal-container .xterm .xterm-scrollable-element > .scrollbar {
+  opacity: 0;
+  pointer-events: none;
+}
+.terminal-container .xterm .xterm-scrollable-element > .scrollbar.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.terminal-container .xterm .xterm-scrollable-element > .scrollbar.invisible {
+  opacity: 0;
+  pointer-events: none;
+}
+/* ==================== Link Styles ==================== */
+.xterm-link {
+  cursor: pointer;
+  text-decoration: underline;
+  color: var(--text-accent);
+}
+.xterm-link:hover {
+  text-decoration: underline;
+  color: var(--text-accent-hover);
+}
+/* ==================== Error and Status Messages ==================== */
+.terminal-error-message {
+  padding: 12px;
+  margin: 8px;
+  background-color: var(--background-modifier-error);
+  border: 1px solid var(--background-modifier-error-border);
+  border-radius: 4px;
+  color: var(--text-error);
+  font-family: var(--font-monospace);
+  font-size: 13px;
+}
+.terminal-exit-message {
+  padding: 12px;
+  margin: 8px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  font-size: 13px;
+}
+/* ==================== Theme Compatibility ==================== */
+/* Ensure styles update correctly when switching between light and dark themes */
+/* When the "Use Obsidian theme" option is enabled, the terminal automatically adapts to theme colors */
+/* When using a custom color scheme, these styles are dynamically overridden by JavaScript */
+.theme-dark .terminal-view,
+.theme-dark .terminal-view-container,
+.theme-dark .terminal-container {
+  background-color: var(--terminal-bg-color, var(--background-primary));
+  color: var(--text-normal);
+}
+.theme-light .terminal-view,
+.theme-light .terminal-view-container,
+.theme-light .terminal-container {
+  background-color: var(--terminal-bg-color, var(--background-primary));
+  color: var(--text-normal);
+}
+/* ==================== Focus Styles ==================== */
+.xterm:focus {
+  outline: none;
+}
+.xterm.focus .xterm-cursor {
+  opacity: 1;
+}
+.xterm:not(.focus) .xterm-cursor {
+  opacity: 0.5;
+}
+/* ==================== Performance Optimizations ==================== */
+.xterm-rows {
+  will-change: transform;
+}
+.xterm-cursor-layer,
+.xterm-text-layer,
+.xterm-selection-layer,
+.xterm-link-layer {
+  contain: strict;
+}
+.terminal-theme-preview-section {
+  margin: 12px 0 4px;
+}
+.terminal-theme-preview-title {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.terminal-theme-preview {
+  position: relative;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  overflow: hidden;
+  height: 120px;
+  background: var(--terminal-preview-bg, var(--background-primary));
+}
+.terminal-theme-preview.has-background-image {
+  background: transparent;
+}
+.terminal-theme-preview-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      rgba(0, 0, 0, var(--terminal-preview-bg-overlay-opacity, 0)),
+      rgba(0, 0, 0, var(--terminal-preview-bg-overlay-opacity, 0))
+    ),
+    var(--terminal-preview-bg-image, none);
+  background-size: var(--terminal-preview-bg-size, cover);
+  background-position: var(--terminal-preview-bg-position, center);
+  background-repeat: no-repeat;
+  transform: scale(var(--terminal-preview-bg-scale, 1));
+  transform-origin: center;
+  filter: blur(var(--terminal-preview-bg-blur, 0px));
+  z-index: 0;
+}
+.terminal-theme-preview-content {
+  position: relative;
+  z-index: 1;
+  padding: 10px 12px;
+  font-family: var(--terminal-preview-font-family, var(--font-monospace));
+  font-size: var(--terminal-preview-font-size, 12px);
+  line-height: 1.4;
+  color: var(--terminal-preview-fg, var(--text-normal));
+  opacity: var(--terminal-preview-text-opacity, 1);
+  white-space: pre-wrap;
+}
+.terminal-theme-preview-prompt-line {
+  display: flex;
+  align-items: center;
+}
+.terminal-theme-preview-cursor {
+  display: inline-block;
+  background-color: var(--terminal-preview-fg, var(--text-normal));
+  vertical-align: baseline;
+}
+.terminal-theme-preview-cursor.is-block {
+  width: 0.6em;
+  height: 1em;
+}
+.terminal-theme-preview-cursor.is-underline {
+  width: 0.6em;
+  height: 0.15em;
+  align-self: flex-end;
+  margin-bottom: 0.1em;
+}
+.terminal-theme-preview-cursor.is-bar {
+  width: 0.12em;
+  height: 1em;
+}
+.terminal-theme-preview-cursor.is-blinking {
+  animation: terminal-theme-preview-cursor-blink 1.2s steps(2, start) infinite;
+}
+@keyframes terminal-theme-preview-cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.terminal-theme-preview-renderer-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-normal);
+  background: color-mix(in srgb, var(--background-primary) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--interactive-accent) 50%, var(--background-modifier-border));
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  pointer-events: auto;
+}
+.terminal-theme-preview-renderer-badge.is-hidden {
+  display: none;
+}
+
+/* ==================== Display settings tabs ==================== */
+.terminal-display-tabs {
+  display: inline-flex;
+  gap: 2px;
+  margin: 16px 0 12px;
+  padding: 3px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+}
+.terminal-display-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  min-width: 96px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.terminal-display-tab:hover {
+  color: var(--text-normal);
+  background: color-mix(in srgb, var(--background-modifier-hover) 60%, transparent);
+}
+.terminal-display-tab.is-active {
+  color: var(--text-on-accent, var(--text-normal));
+  background: var(--interactive-accent);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.terminal-display-tab.is-active:hover {
+  background: var(--interactive-accent-hover, var(--interactive-accent));
+}
+.terminal-display-tab-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==================== Terminal Context Menu ==================== */
+.terminal-context-menu {
+  position: fixed;
+  z-index: 10000;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 4px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+}
+.terminal-context-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 13px;
+  gap: 8px;
+  color: var(--text-normal);
+}
+.terminal-context-menu-item:not(.is-disabled) {
+  cursor: pointer;
+}
+.terminal-context-menu-item:not(.is-disabled):hover {
+  background: var(--background-modifier-hover);
+}
+.terminal-context-menu-item.is-disabled {
+  color: var(--text-muted);
+}
+.terminal-context-menu-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.terminal-context-menu-icon.is-disabled {
+  opacity: 0.5;
+}
+.terminal-context-menu-text {
+  flex: 1;
+}
+.terminal-context-menu-shortcut {
+  color: var(--text-faint);
+  font-size: 12px;
+  opacity: 0.7;
+  margin-left: 12px;
+}
+.terminal-context-submenu-container {
+  position: relative;
+}
+.terminal-context-submenu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 4px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  max-height: min(60vh, 420px);
+  display: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 10001;
+  white-space: nowrap;
+}
+.terminal-context-submenu.is-visible {
+  display: block;
+}
+.terminal-context-submenu.is-flipped {
+  left: auto;
+  right: 100%;
+}
+.terminal-context-submenu-arrow {
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+}
+.terminal-context-separator {
+  height: 1px;
+  background: var(--background-modifier-border);
+  margin: 4px 8px;
+}
+
+
+/* AI launcher menu — section headers and readiness badges */
+.preset-scripts-menu-section-header {
+  padding: 8px 12px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.preset-scripts-menu-section-header + .preset-scripts-menu-section-header {
+  margin-top: 4px;
+}
+
+.preset-scripts-menu-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.preset-scripts-menu-section-desc {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-faint);
+}
+
+.preset-scripts-menu-launcher {
+  position: relative;
+}
+
+.preset-scripts-menu-launcher .preset-scripts-menu-label {
+  font-weight: 500;
+}
+
+.preset-scripts-menu-status-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 8px;
+  margin-left: 8px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.preset-scripts-menu-status-badge.is-ready {
+  background: color-mix(in srgb, var(--color-green) 18%, transparent);
+  color: var(--color-green);
+}
+
+.preset-scripts-menu-status-badge.is-not-installed {
+  background: color-mix(in srgb, var(--color-orange) 18%, transparent);
+  color: var(--color-orange);
+}
+
+.preset-scripts-menu-status-badge.is-update-available {
+  background: color-mix(in srgb, var(--interactive-accent) 18%, transparent);
+  color: var(--interactive-accent);
+}
+
+.preset-scripts-menu-status-badge.is-checking {
+  background: var(--background-modifier-border);
+  color: var(--text-faint);
+}
+
+/* Inline launcher version label rendered next to the readiness badge in
+   both the status bar menu and the settings page. Hidden until a probe
+   has resolved a local version. */
+.preset-scripts-menu-version {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  font-family: var(--font-monospace);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.preset-scripts-menu-version.is-hidden {
+  display: none;
+}
+
+.preset-scripts-menu-version.is-update-available {
+  color: var(--interactive-accent);
+}
+
+.termy-launcher-installations-button {
+  margin-left: 8px;
+  height: auto;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.termy-launcher-installations-button.is-hidden {
+  display: none;
+}
+
+.termy-launcher-installations-button.is-installation-warning,
+.preset-scripts-menu-action-btn.is-installation-warning,
+.termy-launcher-installations-modal .termy-launcher-installation-warning {
+  color: var(--color-orange);
+}
+
+.termy-launcher-installations-modal .termy-launcher-installation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.termy-launcher-installations-modal .termy-launcher-installation-row {
+  padding: 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+}
+
+.termy-launcher-installations-modal .termy-launcher-installation-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.termy-launcher-installations-modal .termy-launcher-installation-marker {
+  color: var(--text-muted);
+  font-size: var(--font-smallest);
+}
+
+.termy-launcher-installations-modal .termy-launcher-installation-path {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: var(--font-smallest);
+}
+
+/* Inline hint shown beneath the "Check for AI launcher updates" toggle
+   when offline mode is on. The toggle still works (so the user can
+   pre-arm it for when they go back online) but is dimmed to signal
+   that the update check itself is suppressed. */
+.setting-item.is-offline-suppressed .setting-item-control {
+  opacity: 0.55;
+}
+
+.setting-item.is-offline-suppressed .setting-item-name,
+.setting-item.is-offline-suppressed .setting-item-description {
+  color: var(--text-muted);
+}
+
+.ai-launcher-offline-hint {
+  margin: -4px 0 12px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--color-orange);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--color-orange) 10%, transparent);
+  color: var(--text-normal);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ai-launcher-offline-hint.is-hidden {
+  display: none;
+}
+
+/* Launcher install modal — content layout */
+.termy-launcher-install-modal .termy-launcher-install-desc {
+  margin: 0 0 12px;
+  line-height: 1.5;
+  color: var(--text-normal);
+}
+
+.termy-launcher-install-modal .termy-launcher-install-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  background: var(--background-secondary);
+}
+
+.termy-launcher-install-modal .termy-launcher-install-detail-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.termy-launcher-install-modal .termy-launcher-install-detail-command {
+  font-family: var(--font-monospace);
+  font-size: 13px;
+  color: var(--text-normal);
+}
+
+.termy-launcher-install-modal .termy-launcher-runtime-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-primary-alt);
+}
+
+.termy-launcher-install-modal .termy-launcher-runtime-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.termy-launcher-install-modal .termy-launcher-runtime-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.termy-launcher-install-modal .termy-launcher-runtime-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.termy-launcher-install-modal .termy-launcher-runtime-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.termy-launcher-install-modal .termy-launcher-runtime-label {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--text-normal);
+}
+
+.termy-launcher-install-modal .termy-launcher-runtime-status {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.termy-launcher-install-modal .termy-launcher-runtime-status.is-ready {
+  color: var(--text-success);
+}
+
+.termy-launcher-install-modal .termy-launcher-runtime-status.is-not-installed {
+  color: var(--text-warning);
+}
+
+/* Install command card — copy-paste friendly install one-liner. */
+.termy-launcher-install-modal .termy-launcher-install-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.termy-launcher-install-modal .termy-launcher-install-card-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-normal);
+}
+
+.termy-launcher-install-modal .termy-launcher-install-card-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.termy-launcher-install-modal .termy-launcher-install-command-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.termy-launcher-install-modal .termy-launcher-install-command {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--background-primary);
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  color: var(--text-normal);
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.termy-launcher-install-modal .termy-launcher-install-command-copy {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.termy-launcher-install-modal .termy-launcher-install-command-copy:hover {
+  background: var(--background-modifier-hover);
+}
+
+
+/* AI launcher settings — section headers and preview row */
+.preset-scripts-list-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 4px 4px;
+  user-select: none;
+}
+
+.preset-scripts-list-section-header:first-child {
+  padding-top: 4px;
+}
+
+.preset-scripts-list-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.preset-scripts-list-section-desc {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-faint);
+}
+
+.preset-script-row.preset-script-row-preview {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.preset-script-row.preset-script-row-preview .preset-script-drag-handle.is-disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.preset-script-row .preset-scripts-menu-status-badge {
+  margin-left: 8px;
+}
+
+
+/* ==================== Editor selection persistence ==================== */
+/*
+ * Keep the visible text-selection rectangle in Obsidian's CodeMirror 6
+ * editors when focus moves to a Termy terminal. Without this, clicking
+ * a Termy pane shifts focus to xterm.js's hidden helper textarea, which
+ * makes Chromium collapse `window.getSelection()`. Obsidian's CM6
+ * editors render their selection via the browser's native `::selection`
+ * pseudo-class, so the highlight disappears even though
+ * `EditorState.selection` is unchanged.
+ *
+ * To restore the visual cue we register a CM6 view plugin that paints
+ * `<span class="termy-persisted-selection">` over each non-empty
+ * selection range. This rule colours that span only while the editor
+ * is unfocused, so the native rendering wins for the focused editor.
+ *
+ * Scoped behind `body.termy-preserve-editor-selection`, which the
+ * plugin adds only while at least one terminal leaf is open. This
+ * keeps the rule from leaking into vaults / sessions that have no
+ * terminal, and avoids touching non-Termy DOM on plugin unload.
+ */
+body.termy-preserve-editor-selection .cm-editor:not(.cm-focused) .termy-persisted-selection {
+  background-color: var(--text-selection);
+}

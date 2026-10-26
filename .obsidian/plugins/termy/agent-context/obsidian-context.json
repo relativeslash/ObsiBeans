@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "source": "termy",
+  "updatedAt": "2026-10-26T19:22:29.921Z",
+  "vaultRoot": "/home/whisper2shade/Dev/Tools/ObsiBeans",
+  "workspaceFolders": [
+    "/home/whisper2shade/Dev/Tools/ObsiBeans"
+  ],
+  "activeFile": {
+    "filePath": "/home/whisper2shade/Dev/Tools/ObsiBeans/docs/Private/Contributing/Standards/Changes.md",
+    "vaultPath": "docs/Private/Contributing/Standards/Changes.md",
+    "fileUrl": "file:///home/whisper2shade/Dev/Tools/ObsiBeans/docs/Private/Contributing/Standards/Changes.md",
+    "hasFocus": false
+  },
+  "openFiles": [
+    {
+      "filePath": "/home/whisper2shade/Dev/Tools/ObsiBeans/docs/Private/Contributing/Standards/Changes.md",
+      "vaultPath": "docs/Private/Contributing/Standards/Changes.md",
+      "fileUrl": "file:///home/whisper2shade/Dev/Tools/ObsiBeans/docs/Private/Contributing/Standards/Changes.md",
+      "isActive": true
+    }
+  ],
+  "selection": {
+    "text": "",
+    "isEmpty": true,
+    "from": {
+      "line": 7,
+      "ch": 0,
+      "offset": 594
+    },
+    "to": {
+      "line": 7,
+      "ch": 0,
+      "offset": 594
+    }
+  }
+}

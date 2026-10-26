@@ -24,6 +24,7 @@
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
 .idea/**/obsidian-lens.xml
+.idea/**/git_toolbox_prj.xml
 
 # Gradle
 .idea/**/gradle.xml
@@ -234,4 +235,5 @@ go.work
 go.work.sum
 
 # env file
+
 

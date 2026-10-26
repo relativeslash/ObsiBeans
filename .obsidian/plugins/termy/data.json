@@ -1,0 +1,163 @@
+{
+  "platformShells": {
+    "windows": "cmd",
+    "darwin": "zsh",
+    "linux": "zsh"
+  },
+  "platformCustomShellPaths": {
+    "windows": "",
+    "darwin": "",
+    "linux": ""
+  },
+  "shellArgs": [],
+  "autoEnterVaultDirectory": true,
+  "newInstanceBehavior": "newHorizontalSplit",
+  "createInstanceNearExistingOnes": true,
+  "focusNewInstance": true,
+  "lockNewInstance": false,
+  "fontSize": 14,
+  "fontFamily": "Consolas, \"Courier New\", monospace",
+  "cursorStyle": "block",
+  "cursorBlink": true,
+  "useObsidianTheme": true,
+  "preferredRenderer": "canvas",
+  "scrollback": 5000,
+  "backgroundImageOpacity": 0.5,
+  "backgroundImageSize": "cover",
+  "backgroundImagePosition": "center",
+  "enableBlur": false,
+  "blurAmount": 10,
+  "textOpacity": 1,
+  "visibility": {
+    "enabled": true,
+    "showInCommandPalette": true,
+    "showInRibbon": true,
+    "showInNewTab": true,
+    "showInStatusBar": false
+  },
+  "serverConnection": {
+    "binaryDownloadSource": "cloudflare-r2",
+    "offlineMode": false
+  },
+  "presetScripts": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "icon": "claude",
+      "actions": [
+        {
+          "id": "action-claude-code",
+          "type": "terminal-command",
+          "value": "claude",
+          "enabled": true,
+          "note": ""
+        }
+      ],
+      "terminalTitle": "Claude Code",
+      "showInStatusBar": true,
+      "showInCommandPalette": true,
+      "autoOpenTerminal": true,
+      "runInNewTerminal": false
+    },
+    {
+      "id": "codex",
+      "name": "Codex CLI",
+      "icon": "codex",
+      "actions": [
+        {
+          "id": "action-codex",
+          "type": "terminal-command",
+          "value": "codex",
+          "enabled": true,
+          "note": "Launch Codex with Obsidian context"
+        }
+      ],
+      "terminalTitle": "Codex",
+      "showInStatusBar": true,
+      "showInCommandPalette": true,
+      "autoOpenTerminal": true,
+      "runInNewTerminal": false
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode",
+      "icon": "opencode",
+      "actions": [
+        {
+          "id": "action-opencode",
+          "type": "terminal-command",
+          "value": "opencode",
+          "enabled": true,
+          "note": "Launch OpenCode with Obsidian context"
+        }
+      ],
+      "terminalTitle": "OpenCode",
+      "showInStatusBar": true,
+      "showInCommandPalette": true,
+      "autoOpenTerminal": true,
+      "runInNewTerminal": false
+    },
+    {
+      "id": "hermes",
+      "name": "Hermes",
+      "icon": "hermes",
+      "actions": [
+        {
+          "id": "action-hermes",
+          "type": "terminal-command",
+          "value": "hermes",
+          "enabled": true,
+          "note": "Launch Hermes Agent in the current vault"
+        }
+      ],
+      "terminalTitle": "Hermes",
+      "showInStatusBar": true,
+      "showInCommandPalette": true,
+      "autoOpenTerminal": true,
+      "runInNewTerminal": false
+    },
+    {
+      "id": "pi",
+      "name": "Pi",
+      "icon": "pi",
+      "actions": [
+        {
+          "id": "action-pi",
+          "type": "terminal-command",
+          "value": "pi",
+          "enabled": true,
+          "note": "Launch Pi in the current vault"
+        }
+      ],
+      "terminalTitle": "Pi",
+      "showInStatusBar": true,
+      "showInCommandPalette": true,
+      "autoOpenTerminal": true,
+      "runInNewTerminal": false
+    },
+    {
+      "id": "dsh-tui",
+      "name": "dsh-TUI",
+      "icon": "dsh-tui",
+      "actions": [
+        {
+          "id": "action-dsh-tui",
+          "type": "terminal-command",
+          "value": "dsh-tui",
+          "enabled": true,
+          "note": "Launch dsh-TUI in the current vault"
+        }
+      ],
+      "terminalTitle": "dsh-TUI",
+      "showInStatusBar": true,
+      "showInCommandPalette": true,
+      "autoOpenTerminal": true,
+      "runInNewTerminal": false
+    }
+  ],
+  "hideUnavailableAiLaunchers": true,
+  "checkAiLauncherUpdates": false,
+  "customNodePath": "",
+  "lastSeenChangelogVersion": "1.5.1",
+  "enableDebugLog": false
+}
