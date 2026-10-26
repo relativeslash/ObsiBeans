@@ -20,6 +20,7 @@ The owner accepted the native workspace design as v1. Start with [[docs/Private/
 
 A plugin skeleton with quality gates exists: a workspace view, an open command and a settings tab, without Beans features. [[docs/Private/Contributing/ObsiBeans project info.md|Project information]] owns the toolchain pins, source layout, module boundaries and verified commands. Run `yarn install --immutable` once, then `yarn verify` before handing off any code change; it is what CI runs.
 
+- Yarn uses Plug'n'Play, so there is no `node_modules`. Run Node scripts through Yarn (`yarn node file.ts` or a package script); plain `node` cannot resolve packages. Editors need Plug'n'Play support or Yarn's editor SDK.
 - Put new production code under the layer directory that owns it. `yarn fitness` rejects files outside a layer, forbidden imports and import cycles. Change the rules only together with the design note's module boundaries.
 - Route every UI string through `t()` with a new key in `src/views/messages.en.ts`. Never pass inline prose.
 - Obsidian 1.14 renders settings from `getSettingDefinitions()`. `PluginSettingTab.display()` is deprecated, and lint rejects deprecated APIs.

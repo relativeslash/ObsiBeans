@@ -7,5 +7,9 @@
   "livePreview": true,
   "showUnsupportedFiles": true,
   "promptDelete": false,
-  "attachmentFolderPath": "./attachments"
+  "attachmentFolderPath": "./attachments",
+  "userIgnoreFilters": [
+    "dist/",
+    "coverage/"
+  ]
 }

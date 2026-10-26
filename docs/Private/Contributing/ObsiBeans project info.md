@@ -53,7 +53,13 @@ Rejected: `eslint-plugin-obsidianmd` 0.4.2 requires exactly `obsidian` 1.8.7 and
 
 Observed runtime on 2026-10-26 (Linux, installer 1.13.7): Electron 43.6.0, Chrome 150, Node 24.20.0. The app package update to 1.14.5 does not change Electron. The bundle targets ES2024.
 
-Yarn settings in `.yarnrc.yml`: `nodeLinker: node-modules` so Vite, svelte-check and editors resolve packages without Plug'n'Play SDKs; `enableScripts: false` because no dependency needs an install script; telemetry off. `yarn.config.cjs` constraints require every dependency to use `catalog:`.
+Yarn settings in `.yarnrc.yml`:
+
+- `nodeLinker: pnp`, because the repository root is the vault: a `node_modules` folder made dependency files 97% of the vault's files and polluted its link index. Plug'n'Play keeps packages as archives in `.yarn/cache`, and Obsidian skips dot-folders. Yarn generates `.pnp.cjs` and `.pnp.loader.mjs` at the root; both are gitignored and excluded from lint and the fitness tools.
+- `enableGlobalCache: false`, so bundled module paths are relative to the repository and builds from any checkout location are byte-identical.
+- `enableScripts: false` because no dependency needs an install script; telemetry off.
+
+`vite.config.ts` moves the Vite and Vitest caches to `.cache/`, because their defaults would recreate `node_modules`. The vault's excluded files (`.obsidian/app.json`) hide `dist/` and `coverage/` from search and the graph. `yarn.config.cjs` constraints require every dependency to use `catalog:`.
 
 Upgrades follow `ENG-BUILD-003`: change the catalog entry, run `yarn install`, run `yarn verify`, and update this table in the same change. Yarn 4.18.1 was installed with `yarn set version 4.18.1 --yarn-path`.
 
@@ -90,9 +96,9 @@ All commands run from the repository root and were verified on 2026-10-26.
 | Development bundle in `dist/` | `yarn build` |
 | Native-window smoke test (builds first) | `yarn test:native` |
 
-`yarn build` writes `dist/main.js` (CommonJS, unminified, inline source map) and would add `dist/styles.css` when components declare styles. Two builds produce identical bytes, also across Node 24 and 26. Release packaging is not set up; it belongs to the packaging task.
+`yarn build` writes `dist/main.js` (CommonJS, unminified, inline source map) and would add `dist/styles.css` when components declare styles. Two builds produce identical bytes, also across Node 24 and 26 and across checkout locations. Release packaging is not set up; it belongs to the packaging task.
 
-`yarn test:native` needs a desktop session. It copies `dist/` and `manifest.json` into a disposable vault and starts a separate Obsidian instance with its own profile and runtime directories, so a running Obsidian, its vaults and its CLI socket are untouched; the test fails if that socket changes. It drives that instance over the Chrome DevTools Protocol, then stops the process group and deletes the sandbox. `OBSIDIAN_BIN` sets the launcher (default `obsidian`) and `OBSIDIAN_ASAR` the app package of the target version (default `~/.config/obsidian/obsidian-1.14.5.asar`, which Obsidian downloads when it updates). It fails unless the app reports exactly `minAppVersion`.
+`yarn test:native` needs a desktop session, and its Obsidian window appears briefly. It opens an empty disposable vault, then copies `dist/` and `manifest.json` into it; a vault that already has plugins when first opened shows a trust prompt, and the test fails if any dialog is open. It starts a separate Obsidian instance with its own profile and runtime directories, so a running Obsidian, its vaults and its CLI socket are untouched; the test fails if that socket changes. It drives that instance over the Chrome DevTools Protocol, then stops the process group and deletes the sandbox. `OBSIDIAN_BIN` sets the launcher (default `obsidian`) and `OBSIDIAN_ASAR` the app package of the target version (default `~/.config/obsidian/obsidian-1.14.5.asar`, which Obsidian downloads when it updates). It fails unless the app reports exactly `minAppVersion`.
 
 The changed-line gate compares against `COVERAGE_BASE` or its first argument; otherwise against the merge base with the upstream branch, including uncommitted and untracked files. `none`, or an all-zero commit, means no base: all production code counts as new. CI passes the pull request base or the previous commit of a push.
 

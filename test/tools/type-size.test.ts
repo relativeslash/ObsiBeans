@@ -167,6 +167,7 @@ describe('type-size gate', () => {
       'test/helper.ts': 'export type Helper = string;',
       'tools/tool.cjs': 'module.exports = class Tool {};',
       'build.config.ts': 'export interface BuildConfig { out: string }',
+      '.pnp.cjs': 'module.exports = class PackageManagerRuntime {};',
     });
 
     const report = checkTypeSizes(root, []);

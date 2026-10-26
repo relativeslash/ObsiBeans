@@ -116,11 +116,8 @@ async function main(): Promise<void> {
   const profile = join(sandbox, 'profile');
   const vault = join(sandbox, 'vault');
   const pluginDir = join(vault, '.obsidian', 'plugins', manifest.id);
-  mkdirSync(pluginDir, { recursive: true });
+  mkdirSync(vault);
   mkdirSync(profile);
-  for (const file of ['dist/main.js', 'manifest.json', 'dist/styles.css']) {
-    if (existsSync(file)) copyFileSync(file, join(pluginDir, basename(file)));
-  }
   copyFileSync(asar, join(profile, basename(asar)));
   writeFileSync(join(profile, 'obsidian.json'), JSON.stringify({ vaults: { obsibeanssmoke01: { path: vault, ts: Date.now(), open: true } } }));
 
@@ -145,6 +142,13 @@ async function main(): Promise<void> {
     const version = await session.evaluate(`require('electron').ipcRenderer.sendSync('version')`);
     check(version === manifest.minAppVersion, `Obsidian runs the target version ${manifest.minAppVersion} (got ${String(version)})`);
 
+    // A vault that already contains plugins on first open shows the trust prompt, so install after opening.
+    mkdirSync(pluginDir, { recursive: true });
+    for (const file of ['dist/main.js', 'manifest.json', 'dist/styles.css']) {
+      if (existsSync(file)) copyFileSync(file, join(pluginDir, basename(file)));
+    }
+    await session.evaluate(`app.plugins.loadManifests()`);
+    check(await session.evaluate(`!document.querySelector('.modal-container')`), 'no dialog asks for input');
     await session.evaluate(`app.plugins.setEnable(true)`);
     await session.evaluate(`app.plugins.enablePluginAndSave(${id})`);
     check(await session.evaluate(`!!app.plugins.plugins[${id}]`), 'the plugin loads');

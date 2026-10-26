@@ -15,6 +15,7 @@ export interface SourceFile {
 
 /**
  * Loads every owned source file: the required roots recursively plus top-level build configuration files.
+ * Top-level dotfiles such as the generated `.pnp.cjs` are package-manager output, not owned source.
  * Throws when a required root is missing or a file cannot be parsed, so a gate never passes on missing input.
  */
 export function loadSources(root: string, roots: readonly string[] = SOURCE_ROOTS): SourceFile[] {
@@ -24,7 +25,8 @@ export function loadSources(root: string, roots: readonly string[] = SOURCE_ROOT
     if (!existsSync(dir) || !statSync(dir).isDirectory()) throw new Error(`Required source root is missing: ${sourceRoot}`);
     files.push(...walk(dir));
   }
-  files.push(...readdirSync(root).map((name) => join(root, name)).filter((file) => isSource(file) && statSync(file).isFile()));
+  files.push(...readdirSync(root).filter((name) => !name.startsWith('.')).map((name) => join(root, name))
+    .filter((file) => isSource(file) && statSync(file).isFile()));
   return files.sort().map((file) => parseSource(relative(root, file).split(sep).join('/'), readFileSync(file, 'utf8')));
 }
 

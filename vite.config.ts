@@ -8,6 +8,8 @@ const moduleThreshold = { lines: 90, branches: 80 };
 
 export default defineConfig({
   plugins: [svelte()],
+  // The repository root is an Obsidian vault, which skips dot-folders; the defaults would recreate node_modules.
+  cacheDir: '.cache/vite',
   resolve: process.env.VITEST ? { conditions: ['browser'] } : {},
   build: {
     target: 'es2024',
@@ -22,6 +24,7 @@ export default defineConfig({
   },
   test: {
     include: ['test/**/*.test.ts'],
+    fsModuleCachePath: '.cache/vitest',
     alias: { obsidian: fileURLToPath(new URL('test/support/obsidian.ts', import.meta.url)) },
     coverage: {
       provider: 'v8',
