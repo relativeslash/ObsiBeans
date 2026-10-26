@@ -6,7 +6,7 @@ Local standards notes are optional overrides, not a required parallel set of glo
 
 ## Skills and local workflow
 
-Load `protomatter-repo-navigation` at session start, then the task-relevant skills: `beans` for work tracking, `obsidian-cli` for live vault operations, and `obsidian-markdown` for note syntax.
+Load `protomatter-workspace` at session start and work in the epic clone it sets up, never in the primary checkout. Then load `protomatter-repo-navigation` and the task-relevant skills: `beans` for work tracking, `obsidian-cli` for live vault operations, and `obsidian-markdown` for note syntax.
 
 The repository root is the `ObsiBeans` vault. Retain `docs/` in vault-relative documentation paths and explicitly target that vault.
 

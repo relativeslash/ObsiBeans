@@ -2,6 +2,8 @@
 
 The repository root is the Obsidian vault root (`ObsiBeans`); configuration lives in `.obsidian/`. `docs/` is the authoritative documentation subtree, not a separate vault.
 
+Before repository work, read the `protomatter-workspace` skill first. Resolve or resume the epic/task clone under `AGENT_WORKSPACE` before any writes; subagents inherit the coordinator's verified execution context. Then read `protomatter-repo-navigation` and the task-relevant skills.
+
 Read these entry points before working:
 
 1. [Shared standards](docs/Private/Contributing/Standards/README.md) — entry point for coding, documentation, and engineering standards; follow its contextual-loading index.
