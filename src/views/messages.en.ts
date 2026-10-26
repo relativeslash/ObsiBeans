@@ -7,6 +7,7 @@ export const en = {
   'workspace.label': 'Beans workspace',
   'workspace.notBound': 'No Beans project is bound to this vault.',
   'command.openWorkspace': 'Open workspace',
+  'command.refresh': 'Refresh Beans',
   'settings.project.heading': 'Beans project',
   'settings.project.binding': 'Project binding',
   'settings.executable.name': 'Beans executable',

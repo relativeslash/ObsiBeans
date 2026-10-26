@@ -1,9 +1,11 @@
+import { createHash } from 'node:crypto';
 import { chmod, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   beansEnvironment,
   bindProject,
+  configUnchanged,
   confirmExecutable,
   runBeans,
   SUPPORTED_BEANS_VERSION,
@@ -12,7 +14,7 @@ import {
 } from '../../src/adapter/binding.ts';
 import { ProcessRunner } from '../../src/adapter/process.ts';
 import { parseYaml } from '../support/obsidian.ts';
-import { makeProject, makeSandbox, trust, writeFakeBeans, type Sandbox } from '../support/project.ts';
+import { PROJECT_CONFIG, makeProject, makeSandbox, trust, writeFakeBeans, type Sandbox } from '../support/project.ts';
 
 let sandbox: Sandbox;
 let runner: ProcessRunner;
@@ -53,6 +55,9 @@ describe('bindProject', () => {
       configPath: join(sandbox.vault, '.beans.yml'),
       projectDir: sandbox.vault,
       taskRoot: join(sandbox.vault, 'Task root'),
+      taskRootInVault: 'Task root',
+      configInVault: '.beans.yml',
+      configDigest: createHash('sha256').update(PROJECT_CONFIG).digest('hex'),
       prefix: 'FX-',
       idLength: 5,
       defaults: { status: 'todo', type: 'task' },
@@ -86,6 +91,22 @@ describe('bindProject', () => {
 
     expect(binding.projectDir).toBe(join(sandbox.vault, 'project'));
     expect(binding.taskRoot).toBe(join(sandbox.vault, 'project', 'beans data'));
+    expect([binding.taskRootInVault, binding.configInVault]).toEqual(['project/beans data', 'project/tracker.yml']);
+  });
+
+  it('notices that the config file changed or vanished since it was bound', async () => {
+    const request = await validRequest();
+    const binding = await bound(request);
+    expect(await configUnchanged(binding)).toBe(true);
+
+    await writeFile(binding.configPath, `${PROJECT_CONFIG}# edited\n`);
+    expect(await configUnchanged(binding)).toBe(false);
+
+    await writeFile(binding.configPath, PROJECT_CONFIG);
+    expect(await configUnchanged(binding)).toBe(true);
+
+    await rm(binding.configPath);
+    expect(await configUnchanged(binding)).toBe(false);
   });
 
   describe('executable', () => {

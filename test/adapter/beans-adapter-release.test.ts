@@ -185,6 +185,9 @@ describe.skipIf(release === '')('Beans adapter against a real binary', () => {
     expect(cBlockedByB.blockedByIds).toEqual([b.id]);
     expect(graph.get(b.id)).toEqual({ blocks: [c.id], blockedBy: [a.id] });
     expect(ready).toEqual([a.id].sort());
+    const read = must(await listBeans(ctx));
+    expect([...read.readyIds].sort()).toEqual(ready);
+    expect([...read.blockedIds].sort()).toEqual(must(await listBeans(ctx, { isBlocked: true })).beans.map((bean) => bean.id).sort());
     expect(await edit(b, { kind: 'blocking', field: 'blocking', action: 'add', targetId: a.id })).toMatchObject({ ok: false, error: { kind: 'validation', code: 'backend' } });
     expect(await edit(a, { kind: 'blocking', field: 'blocking', action: 'add', targetId: a.id })).toMatchObject({ ok: false, error: { kind: 'validation', code: 'input' } });
 

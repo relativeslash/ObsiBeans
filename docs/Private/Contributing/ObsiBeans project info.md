@@ -17,7 +17,7 @@ The Beans release was audited on 2026-10-26. Its verified behavior, binary check
 
 ### Meaning of compatibility
 
-The plugin is intended to work with the selected pair above. Compatibility is a requirement to implement and test, **not a claim of already tested support**. The plugin tests on Obsidian so far are the native smoke test (load, open, settings, project binding against a fake Beans executable, unload and reload on 1.14.5, Linux) and the optional run of the process and binding layer against the audited Beans 0.4.2 release binary (Linux, `OBSIBEANS_BEANS_RELEASE`, see Commands). Older versions, future versions, and Obsidian Mobile are not included in this initial target by implication.
+The plugin is intended to work with the selected pair above. Compatibility is a requirement to implement and test, **not a claim of already tested support**. The plugin tests on Obsidian so far are the native smoke test (load, open, settings, project binding against a fake Beans executable, the shared state following real file create, modify, rename and delete events, config-change rebinding, unload and reload on 1.14.5, Linux) and the optional run of the process and binding layer against the audited Beans 0.4.2 release binary (Linux, `OBSIBEANS_BEANS_RELEASE`, see Commands). Older versions, future versions, and Obsidian Mobile are not included in this initial target by implication.
 
 The design currently proposes desktop execution of the local Beans CLI. The baseline does not install or upgrade either application. A developer's installed version is evidence about that machine, not a substitute for this selection.
 
@@ -69,10 +69,10 @@ Upgrades follow `ENG-BUILD-003`: change the catalog entry, run `yarn install`, r
 
 | Path | Holds |
 | --- | --- |
-| `src/plugin/` | Plugin shell: `main.ts` (bundle entry), `settings.ts` (stored settings and the settings host contract), settings tab, command and view registration, project binding lifecycle |
+| `src/plugin/` | Plugin shell: `main.ts` (bundle entry), `settings.ts` (stored settings and the settings host contract), settings tab, command and view registration, project binding lifecycle, vault event routing, the `BeansPort` built from the adapter, draft storage in `data.json` |
 | `src/views/` | `ItemView` hosts, Svelte components, the localization API (`i18n.ts`) and English catalog (`messages.en.ts`) |
-| `src/state/` | Application state and actions (not created yet) |
-| `src/adapter/` | Beans process adapter: `process.ts` (bounded process execution and `ProcessRunner` ownership), `binding.ts` (executable trust, project and task-root binding, `runBeans`), `task-root.ts` (task-root file scan), `beans-model.ts` (value lists, data shapes, error variants, local validation), `beans-graphql.ts` (one GraphQL call, error classification, response field readers), `beans-read.ts` (list, detail, readiness filter, blocking graph, task-root index), `beans-guard.ts` (revision hash and frontmatter preservation check), `beans-write.ts` (`createBean`, `mutateBean`) |
+| `src/state/` | Shared application state and actions of one bound project: `workspace-state.ts` (`WorkspaceState`: cache, filters, selection, mutations, drafts, snapshot), `loader.ts` (debounced newest-wins loading and the parse retry), `filters.ts` (default order and filter matching), `drafts.ts` (stored-draft parsing and classification), `model.ts` (types and the `BeansPort` it needs). Imports adapter types only |
+| `src/adapter/` | Beans process adapter: `process.ts` (bounded process execution and `ProcessRunner` ownership), `binding.ts` (executable trust, project and task-root binding, `configUnchanged`, `runBeans`), `task-root.ts` (task-root file scan), `beans-model.ts` (value lists, data shapes, error variants, local validation), `beans-graphql.ts` (one GraphQL call, error classification, response field readers), `beans-read.ts` (list, detail, readiness, blocking graph, task-root index), `beans-guard.ts` (revision hash and frontmatter preservation check), `beans-write.ts` (`createBean`, `mutateBean`) |
 | `test/<layer>/` | Headless tests per layer; `test/tools/` tests the gates |
 | `test/support/obsidian.ts` | Runtime stand-in for the `obsidian` module in tests, plus `bridge()` for the compile-time type cast |
 | `test/native/smoke.ts` | Native-window smoke test |

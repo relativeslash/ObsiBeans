@@ -73,7 +73,10 @@ describe('plugin shell', () => {
     const { app, shell } = await loadPlugin();
 
     expect([...app.workspace.viewCreators.keys()]).toEqual([WORKSPACE_VIEW_TYPE]);
-    expect(shell.commands.map(({ id, name }) => ({ id, name }))).toEqual([{ id: 'open-workspace', name: en['command.openWorkspace'] }]);
+    expect(shell.commands.map(({ id, name }) => ({ id, name }))).toEqual([
+      { id: 'open-workspace', name: en['command.openWorkspace'] },
+      { id: 'refresh', name: en['command.refresh'] },
+    ]);
     expect(shell.settingTabs).toHaveLength(1);
     expect(shell.settingTabs[0]).toBeInstanceOf(ObsiBeansSettingTab);
   });
@@ -131,7 +134,7 @@ describe('project binding settings', () => {
     expect(tab.getControlValue('config')).toBe('sub/.beans.yml');
     expect(tab.getControlValue('confirmedExecutable')).toBeUndefined();
     expect(plugin.settings.confirmedExecutable).toBe('');
-    expect(shell.data).toEqual({ executable: '/opt/beans', confirmedExecutable: '', confirmedDigest: '', config: 'sub/.beans.yml' });
+    expect(shell.data).toEqual({ executable: '/opt/beans', confirmedExecutable: '', confirmedDigest: '', config: 'sub/.beans.yml', drafts: [] });
   });
 
   it('requires an explicit trust step, then binds and remembers it across reloads', async () => {
@@ -235,7 +238,7 @@ describe('project binding settings', () => {
 
 describe('describeBinding', () => {
   it('says so when the bound build is not the audited release', () => {
-    const binding = { executable: '/x/beans', configPath: '/v/.beans.yml', projectDir: '/v', taskRoot: '/v/t', prefix: '', idLength: 4, defaults: { status: 'todo', type: 'task' } };
+    const binding = { executable: '/x/beans', configPath: '/v/.beans.yml', projectDir: '/v', taskRoot: '/v/t', taskRootInVault: 't', configInVault: '.beans.yml', configDigest: '', prefix: '', idLength: 4, defaults: { status: 'todo', type: 'task' } };
 
     expect(describeBinding({ ok: true, value: { ...binding, version: '0.4.2', verified: true } })).toBe('Bound to Beans 0.4.2. Task root: /v/t');
     expect(describeBinding({ ok: true, value: { ...binding, version: 'dev', verified: false } })).toBe(
