@@ -107,11 +107,41 @@ export class FileSystemAdapter {
   }
 }
 
+/** A vault file or folder, reduced to what the plugin reads. */
+export interface Entry {
+  readonly path: string;
+}
+
+export interface EventRef {
+  readonly name: string;
+  readonly callback: (...args: never[]) => unknown;
+}
+
 export class Vault {
   adapter: unknown;
+  private readonly refs = new Set<EventRef>();
 
   constructor(adapter: unknown) {
     this.adapter = adapter;
+  }
+
+  on(name: string, callback: (...args: never[]) => unknown): EventRef {
+    const ref = { name, callback };
+    this.refs.add(ref);
+    return ref;
+  }
+
+  offref(ref: EventRef): void {
+    this.refs.delete(ref);
+  }
+
+  /** Test hook: what Obsidian does when a file changes. */
+  trigger(name: string, ...args: unknown[]): void {
+    for (const ref of [...this.refs]) if (ref.name === name) (ref.callback as (...values: unknown[]) => unknown)(...args);
+  }
+
+  get listenerCount(): number {
+    return this.refs.size;
   }
 }
 
@@ -172,6 +202,19 @@ export class Plugin {
 
   addSettingTab(tab: PluginSettingTab): void {
     this.settingTabs.push(tab);
+  }
+
+  /** Obsidian detaches registered events when the plugin unloads. */
+  private readonly registered: EventRef[] = [];
+
+  registerEvent(ref: EventRef): void {
+    this.registered.push(ref);
+  }
+
+  /** Test hook: unload as Obsidian does, running `onunload` and then detaching registered events. */
+  unload(): void {
+    (this as unknown as { onunload?: () => void }).onunload?.();
+    for (const ref of this.registered.splice(0)) this.app.vault.offref(ref);
   }
 }
 

@@ -7,8 +7,8 @@
  * Needs a desktop session. OBSIDIAN_BIN is the launcher (default `obsidian`); OBSIDIAN_ASAR is the app package
  * of the target version (default ~/.config/obsidian/obsidian-<minAppVersion>.asar).
  */
-import { spawn } from 'node:child_process';
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, isAbsolute, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -166,8 +166,19 @@ async function main(): Promise<void> {
       'the settings tab renders the declared project settings');
 
     // Binding needs the real vault adapter and parseYaml. A Node script outside the vault stands in for Beans.
+    // It answers `version`, and any GraphQL call with the beans found in the task root, so that the plugin's
+    // state follows real file changes.
     const fakeBeans = join(sandbox, 'beans');
-    writeFileSync(fakeBeans, `#!${process.execPath}\nconsole.log('beans 0.4.2 (fake) built now')\n`);
+    writeFileSync(fakeBeans, `#!${process.execPath}
+const fs = require('fs');
+if (process.argv.includes('version')) { console.log('beans 0.4.2 (fake) built now'); process.exit(0); }
+const beans = fs.readdirSync('Task root').filter((name) => name.endsWith('.md')).map((name) => {
+  const text = fs.readFileSync('Task root/' + name, 'utf8');
+  return { id: name.split('--')[0], slug: 'x', path: name, title: /^title: (.*)$/m.exec(text)?.[1] ?? '', status: 'todo', type: 'task', priority: 'normal', tags: [],
+    createdAt: '', updatedAt: '', parentId: null, blockingIds: [], blockedByIds: [], blockedBy: [], children: [] };
+});
+console.log(JSON.stringify({ beans }));
+`);
     chmodSync(fakeBeans, 0o755);
     mkdirSync(join(vault, 'Task root'));
     writeFileSync(join(vault, '.beans.yml'), 'beans:\n    path: Task root\n    prefix: FX-\n    id_length: 5\n');
@@ -179,8 +190,60 @@ async function main(): Promise<void> {
     })()`);
     check(bound, 'the trusted executable binds the vault project through the real vault adapter and YAML parser');
 
+    // Real vault events: changes made outside Obsidian, as the Beans CLI or an agent would, reach the shared state.
+    const taskFile = join(vault, 'Task root', 'FX-aaaaa--one.md');
+    const titles = `app.plugins.plugins[${id}].state?.getSnapshot().beans.map((bean) => bean.title).join()`;
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().status === 'empty'`, 'the empty project');
+    check(true, 'the project loads through the real vault adapter and shows as empty');
+    await session.evaluate(`(window.vaultEvents = [], app.vault.on('create', (file) => window.vaultEvents.push('create ' + file.path)), app.vault.on('modify', (file) => window.vaultEvents.push('modify ' + file.path)), true)`);
+    writeFileSync(taskFile, '---\ntitle: First\n---\n');
+    await session.waitFor(`${titles} === 'First'`, 'a created file to appear');
+    check(true, 'a file created outside Obsidian appears in the shared state');
+    writeFileSync(taskFile, '---\ntitle: Second\n---\n');
+    await session.waitFor(`${titles} === 'Second'`, 'a modified file to refresh');
+    check(true, 'a file modified outside Obsidian refreshes the shared state');
+    renameSync(taskFile, join(vault, 'Task root', 'FX-aaaaa--renamed.md'));
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().beans[0]?.path === 'FX-aaaaa--renamed.md'`, 'a renamed file to refresh');
+    check(true, 'a file renamed outside Obsidian refreshes the shared state');
+    unlinkSync(join(vault, 'Task root', 'FX-aaaaa--renamed.md'));
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().status === 'empty'`, 'a deleted file to leave the project');
+    check(true, 'a file deleted outside Obsidian leaves the shared state');
+    writeFileSync(taskFile, '---\ntitle: Third\n---\n');
+    await session.waitFor(`${titles} === 'Third'`, 'the refresh command target');
+    const refreshedBefore = await session.evaluate(`app.plugins.plugins[${id}].state.getSnapshot().refreshedAt`) as number;
+    await delay(20);
+    await session.evaluate(`app.commands.executeCommandById(${id} + ':refresh')`);
+    await session.waitFor(`app.plugins.plugins[${id}].state.getSnapshot().refreshedAt > ${String(refreshedBefore)}`, 'the Refresh command to reload');
+    check(true, 'the Refresh command reloads the project at once');
+
+    // The project config is not an indexed vault file; record whether Obsidian reports changes to it.
+    writeFileSync(join(vault, '.beans.yml'), 'beans:\n    path: Task root\n    prefix: FX-\n    id_length: 5\n# touched\n');
+    await delay(1500);
+    console.log(`INFO config change events seen by the vault: ${String(await session.evaluate(`window.vaultEvents.filter((event) => event.endsWith('.beans.yml')).join() || 'none'`))}`);
+
+    // The config is not an indexed vault file, so a refresh is what notices that it changed, and rebinds.
+    const rebound = await session.evaluate(`(async () => {
+      const plugin = app.plugins.plugins[${id}];
+      const old = plugin.state;
+      await app.vault.adapter.write('.beans.yml', 'beans:\\n    path: Task root\\n    prefix: FX-\\n    id_length: 5\\n    default_status: draft\\n');
+      await app.commands.executeCommandById(${id} + ':refresh');
+      for (let attempt = 0; attempt < 40; attempt++) {
+        if (plugin.state && plugin.state !== old && plugin.binding?.ok && plugin.binding.value.defaults.status === 'draft') return true;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      return false;
+    })()`);
+    check(rebound, 'a refresh notices a changed project config and rebinds');
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().status === 'ready'`, 'the rebound project to load');
+
+    const disposed = await session.evaluate(`(window.disposedState = app.plugins.plugins[${id}].state, window.disposedSnapshot = window.disposedState.getSnapshot(), true)`);
+    check(disposed, 'a state exists to be released');
     await session.evaluate(`app.plugins.disablePlugin(${id})`);
     check(await session.evaluate(`!app.plugins.plugins[${id}] && !document.querySelector('.obsibeans-workspace')`), 'disabling unloads the plugin and unmounts the workspace');
+    writeFileSync(join(vault, 'Task root', 'FX-bbbbb--late.md'), '---\ntitle: Late\n---\n');
+    await delay(1500);
+    check(await session.evaluate(`window.disposedState.getSnapshot() === window.disposedSnapshot`), 'a change after unloading reaches no state: its listeners and timers are released');
+    check(spawnSync('pgrep', ['-f', fakeBeans]).status === 1, 'no Beans process is left running');
 
     await session.evaluate(`app.plugins.enablePlugin(${id})`);
     await session.evaluate(`app.commands.executeCommandById(${id} + ':open-workspace')`);

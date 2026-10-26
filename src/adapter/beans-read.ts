@@ -193,6 +193,10 @@ export interface ProjectRead {
   readonly beans: readonly BeanSummary[];
   /** Files Beans would load as beans but that are not valid bean files. Shown as invalid data. */
   readonly invalid: readonly InvalidTaskFile[];
+  /** IDs with a blocker, stored on either side, that is not completed or scrapped (BC-38). Complete only for an unfiltered list. */
+  readonly blockedIds: readonly string[];
+  /** IDs `beans list --ready` would list (BC-39): not blocked and not in progress, completed, scrapped or draft. */
+  readonly readyIds: readonly string[];
 }
 
 /**
@@ -208,7 +212,8 @@ export async function listBeans(ctx: BeansContext, filter: BeanFilter = {}): Pro
   ]);
   if (!index.ok) return index;
   if (!cores.ok) return cores;
-  return ok({ beans: await assembleAll(ctx, cores.value, index.value), invalid: index.value.invalid });
+  const beans = await assembleAll(ctx, cores.value, index.value);
+  return ok({ beans, invalid: index.value.invalid, ...readiness(beans) });
 }
 
 /** One bean with its description, or null when no such bean exists. `id` must be the full ID. */
@@ -236,6 +241,26 @@ export function checkId(ctx: BeansContext, id: string): string | undefined {
   return id.length === prefix.length + idLength && id.startsWith(prefix) && /^[0-9a-z]+$/.test(id.slice(prefix.length))
     ? undefined
     : `"${id.slice(0, 40)}" is not a full bean ID.`;
+}
+
+const FINISHED = ['completed', 'scrapped'];
+
+/**
+ * Blocked and ready IDs, computed from the rows because Beans offers readiness only as a filter, which would cost a
+ * second full project load. A blocker that does not exist does not block (observed on a development build).
+ */
+export function readiness(beans: readonly BeanSummary[]): Pick<ProjectRead, 'blockedIds' | 'readyIds'> {
+  const statusOf = new Map(beans.map((bean) => [bean.id, bean.status]));
+  const graph = blockingGraph(beans);
+  const open = (id: string): boolean => {
+    const status = statusOf.get(id);
+    return status !== undefined && !FINISHED.includes(status);
+  };
+  const blocked = beans.filter((bean) => graph.get(bean.id)?.blockedBy.some(open));
+  const blockedIds = blocked.map((bean) => bean.id);
+  const blockedSet = new Set(blockedIds);
+  const readyIds = beans.filter((bean) => !blockedSet.has(bean.id) && !READY_FILTER.excludeStatus?.includes(bean.status)).map((bean) => bean.id);
+  return { blockedIds, readyIds };
 }
 
 export interface Blocking {

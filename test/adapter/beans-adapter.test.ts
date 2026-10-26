@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { classifyMessage, type BeansContext } from '../../src/adapter/beans-graphql.ts';
 import { fnv1a64 } from '../../src/adapter/beans-guard.ts';
 import type { AdapterError, BeanSummary, Outcome } from '../../src/adapter/beans-model.ts';
-import { READY_FILTER, blockingGraph, getBean, listBeans } from '../../src/adapter/beans-read.ts';
+import { READY_FILTER, blockingGraph, getBean, listBeans, readiness } from '../../src/adapter/beans-read.ts';
 import { createBean, mutateBean, type Change } from '../../src/adapter/beans-write.ts';
 import { bindProject } from '../../src/adapter/binding.ts';
 import { ProcessRunner } from '../../src/adapter/process.ts';
@@ -243,6 +243,40 @@ describe('blockingGraph', () => {
     expect(graph.get(A)).toEqual({ blocks: [B], blockedBy: [] });
     expect(graph.get(B)).toEqual({ blocks: [C], blockedBy: [A] });
     expect(graph.get(C)).toEqual({ blocks: [], blockedBy: [B] });
+  });
+});
+
+describe('readiness', () => {
+  const bean = (id: string, extra: Partial<BeanSummary>): BeanSummary => ({ ...(gql(id) as unknown as BeanSummary), revision: null, problems: [], blockedByLinkIds: [], childIds: [], ...extra });
+
+  it('blocks on an unfinished blocker stored on either side, and unblocks when it finishes or is scrapped', () => {
+    const rows = [
+      bean(A, { blockingIds: [B] }), // A blocks B
+      bean(B, {}),
+      bean(C, { blockedByIds: [A] }), // C waits for A
+      bean('FX-ddddd', { status: 'completed' }),
+      bean('FX-eeeee', { blockedByIds: ['FX-ddddd'] }), // its blocker is finished
+      bean('FX-fffff', { blockedByIds: ['FX-ggggg'] }), // its blocker does not exist
+      bean('FX-ggggg', { status: 'scrapped', blockingIds: ['FX-hhhhh'] }),
+      bean('FX-hhhhh', {}),
+    ];
+
+    const { blockedIds, readyIds } = readiness(rows);
+
+    expect([...blockedIds].sort()).toEqual([B, C]);
+    expect([...readyIds].sort()).toEqual([A, 'FX-eeeee', 'FX-fffff', 'FX-hhhhh']);
+  });
+
+  it('never calls started, finished, scrapped or draft work ready, as `beans list --ready` does', () => {
+    const rows = ['in-progress', 'completed', 'scrapped', 'draft', 'todo'].map((status, index) => bean(`FX-${String(index).repeat(5)}`, { status }));
+
+    expect(readiness(rows).readyIds).toEqual(['FX-44444']);
+  });
+
+  it('comes with every listing', async () => {
+    await script(sandbox.outside, [{ when: LIST, stdout: { beans: [gql(A, { blockingIds: [B] }), gql(B)] } }]);
+
+    expect(expectValue(await listBeans(ctx))).toMatchObject({ blockedIds: [B], readyIds: [A] });
   });
 });
 

@@ -52,6 +52,11 @@ export interface Binding {
   /** The config's directory: the working directory of every Beans call. */
   readonly projectDir: string;
   readonly taskRoot: string;
+  /** The task root and config relative to the vault, with `/` separators: what Obsidian's vault events report. */
+  readonly taskRootInVault: string;
+  readonly configInVault: string;
+  /** SHA-256 of the config file this binding was made from; `configUnchanged` compares it with the file as it is now. */
+  readonly configDigest: string;
   readonly prefix: string;
   readonly idLength: number;
   /** Effective creation defaults. Beans' GraphQL ignores them, so creation must send them explicitly. */
@@ -130,6 +135,9 @@ async function inspectExecutable(path: string, vaultRoot: string): Promise<Resul
 interface ProjectConfig {
   readonly configPath: string;
   readonly taskRoot: string;
+  readonly taskRootInVault: string;
+  readonly configInVault: string;
+  readonly configDigest: string;
   readonly prefix: string;
   readonly idLength: number;
   readonly defaults: ProjectDefaults;
@@ -152,8 +160,11 @@ async function readProjectConfig(vaultRoot: string, config: string, parseYaml: (
   if (info.size > MAX_CONFIG_BYTES) return invalid('file is too large');
 
   let root: unknown;
+  let configDigest: string;
   try {
-    root = parseYaml(await readFile(configPath, 'utf8'));
+    const configText = await readFile(configPath, 'utf8');
+    configDigest = createHash('sha256').update(configText).digest('hex');
+    root = parseYaml(configText);
   } catch (error) {
     return invalid(error instanceof Error ? error.message : 'not valid YAML');
   }
@@ -183,7 +194,8 @@ async function readProjectConfig(vaultRoot: string, config: string, parseYaml: (
   }
   if (!isInside(vault, taskRoot)) return fail({ code: 'task-root-outside-vault', path });
   if (!(await stat(taskRoot)).isDirectory()) return fail({ code: 'task-root-not-directory', path });
-  return { ok: true, value: { configPath, taskRoot, prefix, idLength, defaults: { status, type } } };
+  const inVault = (path: string): string => relative(vault, path).split(sep).join('/');
+  return { ok: true, value: { configPath, taskRoot, taskRootInVault: inVault(taskRoot), configInVault: inVault(configPath), configDigest, prefix, idLength, defaults: { status, type } } };
 }
 
 function describeFailure(result: ProcessResult, path: string): BindingDiagnostic {
@@ -224,6 +236,18 @@ export function bindProject(request: BindingRequest): Promise<Result<Binding>> {
   return guarded(() => bind(request));
 }
 
+/**
+ * Whether the config file still has the content this binding was made from. Obsidian does not index dot-files, so
+ * it reports no events for `.beans.yml`; a refresh asks this instead. An unreadable file counts as changed.
+ */
+export async function configUnchanged(binding: Binding): Promise<boolean> {
+  try {
+    return createHash('sha256').update(await readFile(binding.configPath, 'utf8')).digest('hex') === binding.configDigest;
+  } catch {
+    return false;
+  }
+}
+
 /** The user's explicit trust step: validates the entered executable and returns what to remember about it. */
 export function confirmExecutable(path: string, vaultRoot: string): Promise<Result<ExecutableTrust>> {
   return guarded(async () => {
@@ -257,12 +281,12 @@ async function bind(request: BindingRequest): Promise<Result<Binding>> {
 
   const project = await readProjectConfig(vaultRoot, config, parseYaml);
   if (!project.ok) return project;
-  const { configPath, taskRoot, prefix, idLength, defaults } = project.value;
+  const { configPath, taskRoot, taskRootInVault, configInVault, configDigest, prefix, idLength, defaults } = project.value;
   const projectDir = dirname(configPath);
 
   const version = await probeVersion(runner, inspected.value, projectDir);
   if (!version.ok) return version;
-  return { ok: true, value: { executable: inspected.value, configPath, projectDir, taskRoot, prefix, idLength, defaults, version: version.value, verified: version.value === SUPPORTED_BEANS_VERSION } };
+  return { ok: true, value: { executable: inspected.value, configPath, projectDir, taskRoot, taskRootInVault, configInVault, configDigest, prefix, idLength, defaults, version: version.value, verified: version.value === SUPPORTED_BEANS_VERSION } };
 }
 
 /**
