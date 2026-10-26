@@ -7,7 +7,7 @@ priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:42Z
-updated_at: 2026-10-26T18:12:47Z
+updated_at: 2026-10-26T19:09:52Z
 parent: OB-fgjv
 blocked_by:
     - OB-hup8
@@ -33,3 +33,4 @@ Before completion, append a Summary of Changes linking child evidence.
 - [[docs/Private/Tasks/OB-wzgt--resolve-v1-scope-and-interaction-decisions.md|OB-wzgt — Resolve v1 scope and interaction decisions]]
 - [[docs/Private/Tasks/OB-hup8--audit-beans-042-contracts-and-complete-the-tui-par.md|OB-hup8 — Audit Beans 0.4.2 contracts and complete the TUI parity matrix]]
 - [[docs/Private/Tasks/OB-f6ce--scaffold-the-desktop-plugin-and-executable-quality.md|OB-f6ce — Scaffold the desktop plugin and executable quality gates]]
+- [[docs/Private/Tasks/OB-jo2i--require-the-verify-check-on-main.md|OB-jo2i — Require the verify check on main]]
