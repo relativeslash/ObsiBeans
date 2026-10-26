@@ -55,6 +55,7 @@ describe('bindProject', () => {
       taskRoot: join(sandbox.vault, 'Task root'),
       prefix: 'FX-',
       idLength: 5,
+      defaults: { status: 'todo', type: 'task' },
       version: SUPPORTED_BEANS_VERSION,
       verified: true,
     });
@@ -65,6 +66,15 @@ describe('bindProject', () => {
     await makeProject(sandbox.vault, 'beans:\n    path: Task root\n');
 
     expect(await bound(request)).toMatchObject({ prefix: '', idLength: 4 });
+  });
+
+  it('reads the creation defaults, and falls back to todo and task (not the CLI\'s milestone)', async () => {
+    const request = await validRequest();
+    expect((await bound(request)).defaults).toEqual({ status: 'todo', type: 'task' });
+
+    await makeProject(sandbox.vault, 'beans:\n    path: Task root\n    default_status: draft\n    default_type: bug\n');
+
+    expect((await bound(request)).defaults).toEqual({ status: 'draft', type: 'bug' });
   });
 
   it('binds an explicit config in a subfolder and resolves its task path from that folder', async () => {
@@ -229,6 +239,8 @@ describe('bindProject', () => {
       ['a zero id length', 'beans:\n    path: t\n    id_length: 0\n', 'beans.id_length must be a whole number from 1 to 64'],
       ['a huge id length', 'beans:\n    path: t\n    id_length: 65\n', 'beans.id_length must be a whole number from 1 to 64'],
       ['a text id length', 'beans:\n    path: t\n    id_length: many\n', 'beans.id_length must be a whole number from 1 to 64'],
+      ['an unknown default status', 'beans:\n    path: t\n    default_status: wip\n', 'beans.default_status must be one of in-progress, todo, draft, completed, scrapped'],
+      ['an unknown default type', 'beans:\n    path: t\n    default_type: story\n', 'beans.default_type must be one of milestone, epic, bug, feature, task'],
       ['an oversized file', `beans:\n    path: t\n${'#'.repeat(70_000)}\n`, 'file is too large'],
     ] as const)('rejects %s', async (_name, content, detail) => {
       const request = await validRequest();

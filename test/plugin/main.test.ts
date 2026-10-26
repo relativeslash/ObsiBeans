@@ -235,7 +235,7 @@ describe('project binding settings', () => {
 
 describe('describeBinding', () => {
   it('says so when the bound build is not the audited release', () => {
-    const binding = { executable: '/x/beans', configPath: '/v/.beans.yml', projectDir: '/v', taskRoot: '/v/t', prefix: '', idLength: 4 };
+    const binding = { executable: '/x/beans', configPath: '/v/.beans.yml', projectDir: '/v', taskRoot: '/v/t', prefix: '', idLength: 4, defaults: { status: 'todo', type: 'task' } };
 
     expect(describeBinding({ ok: true, value: { ...binding, version: '0.4.2', verified: true } })).toBe('Bound to Beans 0.4.2. Task root: /v/t');
     expect(describeBinding({ ok: true, value: { ...binding, version: 'dev', verified: false } })).toBe(
