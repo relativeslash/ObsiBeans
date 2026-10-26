@@ -6,7 +6,10 @@ import { type BindingState, type ObsiBeansSettings, type SettingsHost } from './
 /** The one-line, translated state of the project binding. */
 export function describeBinding(state: BindingState): string {
   if (!state) return t('binding.checking');
-  if (state.ok) return t('binding.bound', { version: state.value.version, taskRoot: state.value.taskRoot });
+  if (state.ok) {
+    const { version, taskRoot, verified } = state.value;
+    return t(verified ? 'binding.bound' : 'binding.bound-unverified', { version, taskRoot, supported: SUPPORTED_BEANS_VERSION });
+  }
   const { code, ...values } = state.diagnostic;
   return t(`binding.${code}`, values);
 }

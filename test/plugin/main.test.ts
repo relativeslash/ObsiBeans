@@ -234,6 +234,15 @@ describe('project binding settings', () => {
 });
 
 describe('describeBinding', () => {
+  it('says so when the bound build is not the audited release', () => {
+    const binding = { executable: '/x/beans', configPath: '/v/.beans.yml', projectDir: '/v', taskRoot: '/v/t', prefix: '', idLength: 4 };
+
+    expect(describeBinding({ ok: true, value: { ...binding, version: '0.4.2', verified: true } })).toBe('Bound to Beans 0.4.2. Task root: /v/t');
+    expect(describeBinding({ ok: true, value: { ...binding, version: 'dev', verified: false } })).toBe(
+      'Bound to Beans dev, a build this plugin has not verified (supported release: 0.4.2). Task root: /v/t',
+    );
+  });
+
   it('formats every diagnostic with its details instead of a raw key', () => {
     const diagnostics: BindingDiagnostic[] = [
       { code: 'executable-failed', reason: 'exit', detail: 'exit code 7' },
@@ -245,7 +254,7 @@ describe('describeBinding', () => {
 
     expect(diagnostics.map((diagnostic) => describeBinding({ ok: false, diagnostic }))).toEqual([
       'The Beans executable failed (exit). exit code 7',
-      'Unsupported Beans version. Found "beans dev"; this plugin supports 0.4.2.',
+      'Unsupported Beans version. Found "beans dev"; this plugin supports 0.4.2 and development builds.',
       'The project configuration .beans.yml is invalid: bad',
       'The project could not be checked: oops',
       'The task root is outside the vault: ../x',

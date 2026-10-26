@@ -56,6 +56,7 @@ describe('bindProject', () => {
       prefix: 'FX-',
       idLength: 5,
       version: SUPPORTED_BEANS_VERSION,
+      verified: true,
     });
   });
 
@@ -138,9 +139,17 @@ describe('bindProject', () => {
       expect(await bound({ ...request, ...(await trust(request.executable)) })).toMatchObject({ version: '0.4.2' });
     });
 
-    it('rejects an unsupported or unverified version, without trusting a lookalike line', async () => {
+    it('binds a development build and marks it unverified, but the audited release as verified', async () => {
       const request = await validRequest();
-      for (const line of ['beans dev (unknown) built unknown', 'beans 0.4.3 (x) built now', 'beans 0.4.20', 'something else', '']) {
+      const dev = await writeFakeBeans(sandbox.outside, 'beans dev (unknown) built unknown', 'dev-beans');
+
+      expect(await bound(request)).toMatchObject({ version: '0.4.2', verified: true });
+      expect(await bound({ ...request, executable: dev, ...(await trust(dev)) })).toMatchObject({ version: 'dev', verified: false, executable: dev });
+    });
+
+    it('rejects any other version, without trusting a lookalike line', async () => {
+      const request = await validRequest();
+      for (const line of ['beans 0.4.1 (x) built now', 'beans 0.4.3 (x) built now', 'beans 0.4.20', 'beans developer', 'something else', '']) {
         const executable = await writeFakeBeans(sandbox.outside, line, `v-${String(line.length)}`);
 
         expect(await diagnosticOf({ ...request, executable, ...(await trust(executable)) })).toEqual({
