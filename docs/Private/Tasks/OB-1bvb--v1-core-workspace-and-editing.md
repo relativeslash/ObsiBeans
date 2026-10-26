@@ -1,13 +1,13 @@
 ---
 # OB-1bvb
 title: V1 core workspace and editing
-status: todo
+status: in-progress
 type: epic
 priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:42Z
-updated_at: 2026-10-26T01:45:43Z
+updated_at: 2026-10-26T22:45:04Z
 parent: OB-fgjv
 blocked_by:
     - OB-26rz

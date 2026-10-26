@@ -2,20 +2,25 @@
 import { chmod, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { SettingDefinition } from 'obsidian';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BindingDiagnostic } from '../../src/adapter/binding.ts';
 import ObsiBeansPlugin from '../../src/plugin/main.ts';
 import { describeBinding, ObsiBeansSettingTab } from '../../src/plugin/settings-tab.ts';
 import { en } from '../../src/views/messages.en.ts';
-import { WORKSPACE_VIEW_TYPE, WorkspaceView } from '../../src/views/workspace-view.ts';
-import { App, bridge, type Plugin, type PluginSettingTab } from '../support/obsidian.ts';
+import { ISSUE_VIEW_TYPE, IssueView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../../src/views/workspace-view.ts';
+import { App, bridge, type Plugin, type PluginSettingTab, WorkspaceLeaf } from '../support/obsidian.ts';
 import { makeProject, makeSandbox, trust, writeFakeBeans, type Sandbox } from '../support/project.ts';
 
 let sandbox: Sandbox;
 beforeEach(async () => {
+  // jsdom has no ResizeObserver; Obsidian's Electron does. The layout is not measured in these tests.
+  vi.stubGlobal('ResizeObserver', class { observe(): void {} unobserve(): void {} disconnect(): void {} });
   sandbox = await makeSandbox();
 });
-afterEach(() => sandbox.dispose());
+afterEach(async () => {
+  vi.unstubAllGlobals();
+  await sandbox.dispose();
+});
 
 interface Loaded {
   app: App;
@@ -70,13 +75,15 @@ const statusOf = (tab: ObsiBeansSettingTab): string => mountStatus(tab).row.desc
 
 describe('plugin shell', () => {
   it('registers the workspace view, open command and settings tab on load', async () => {
-    const { app, shell } = await loadPlugin();
+    const { app, shell, plugin } = await loadPlugin();
 
-    expect([...app.workspace.viewCreators.keys()]).toEqual([WORKSPACE_VIEW_TYPE]);
+    expect([...app.workspace.viewCreators.keys()]).toEqual([WORKSPACE_VIEW_TYPE, ISSUE_VIEW_TYPE]);
     expect(shell.commands.map(({ id, name }) => ({ id, name }))).toEqual([
       { id: 'open-workspace', name: en['command.openWorkspace'] },
       { id: 'refresh', name: en['command.refresh'] },
+      { id: 'close-view', name: en['command.closeView'] },
     ]);
+    expect(bridge<Plugin>(plugin).ribbon.map(({ icon, title }) => ({ icon, title }))).toEqual([{ icon: 'list-checks', title: en['command.openWorkspace'] }]);
     expect(shell.settingTabs).toHaveLength(1);
     expect(shell.settingTabs[0]).toBeInstanceOf(ObsiBeansSettingTab);
   });
@@ -95,13 +102,67 @@ describe('plugin shell', () => {
   });
 });
 
+describe('issue tabs and closing', () => {
+  it('opens one tab per bean, reveals an open one and keeps several beans apart', async () => {
+    const { app, plugin } = await loadPlugin();
+
+    await plugin.openIssue('OB-aaaa');
+    await plugin.openIssue('OB-bbbb');
+    await plugin.openIssue('OB-aaaa');
+
+    const leaves = app.workspace.getLeavesOfType(ISSUE_VIEW_TYPE);
+    expect(leaves.map((leaf) => (leaf.view as unknown as IssueView).beanId)).toEqual(['OB-aaaa', 'OB-bbbb']);
+    expect(app.workspace.revealed).toEqual([leaves[0], leaves[1], leaves[0]]);
+  });
+
+  it('offers Close Beans view only while a Beans tab is active, and closes just that tab', async () => {
+    const { app, shell, plugin } = await loadPlugin();
+    await plugin.openWorkspace();
+    await plugin.openIssue('OB-aaaa');
+    const close = shell.commands.find((command) => command.id === 'close-view');
+
+    expect(close?.checkCallback?.(true)).toBe(false);
+    app.workspace.activeLeaf = app.workspace.getLeavesOfType(ISSUE_VIEW_TYPE)[0];
+    expect(close?.checkCallback?.(true)).toBe(true);
+    expect(app.workspace.leaves).toHaveLength(2);
+    expect(close?.checkCallback?.(false)).toBe(true);
+    await vi.waitFor(() => { expect(app.workspace.getLeavesOfType(ISSUE_VIEW_TYPE)).toHaveLength(0); });
+    expect(app.workspace.getLeavesOfType(WORKSPACE_VIEW_TYPE)).toHaveLength(1);
+    app.workspace.activeLeaf = new WorkspaceLeaf(app.workspace);
+    expect(close?.checkCallback?.(true)).toBe(false);
+  });
+
+  it('tells views about setting changes, so density applies at once', async () => {
+    const { tab, plugin } = await loadPlugin();
+    let calls = 0;
+    const stop = plugin.onBindingChange(() => calls++);
+
+    await tab.setControlValue('density', 'compact');
+    await tab.setControlValue('density', 'huge');
+
+    expect(plugin.density).toBe('compact');
+    expect(tab.getControlValue('density')).toBe('compact');
+    expect(calls).toBe(1);
+    expect(plugin.bindingText).toBe(en['binding.executable-not-set']);
+    stop();
+  });
+
+  it('keeps a saved density across reloads and ignores an unknown one', async () => {
+    expect((await loadPlugin({ density: 'compact' })).plugin.density).toBe('compact');
+    expect((await loadPlugin({ density: 'tiny' })).plugin.density).toBe('comfortable');
+  });
+});
+
 describe('project binding settings', () => {
   it('declares the executable, trust action, configuration and binding status', async () => {
     const { tab } = await loadPlugin();
 
     const items = rowsOf(tab);
 
-    expect(tab.getSettingDefinitions()).toMatchObject([{ type: 'group', heading: en['settings.project.heading'] }]);
+    expect(tab.getSettingDefinitions()).toMatchObject([
+      { type: 'group', heading: en['settings.project.heading'] },
+      { type: 'group', heading: en['settings.view.heading'], items: [{ control: { type: 'dropdown', key: 'density', options: { comfortable: en['settings.density.comfortable'], compact: en['settings.density.compact'] } } }] },
+    ]);
     expect(items.map((item) => item.name)).toEqual([
       en['settings.executable.name'],
       en['settings.confirm.name'],
@@ -118,7 +179,7 @@ describe('project binding settings', () => {
     for (const data of [undefined, null, 'text', 42, { executable: 5, config: ['x'] }]) {
       const { plugin } = await loadPlugin(data);
 
-      expect(plugin.settings).toEqual({ executable: '', confirmedExecutable: '', confirmedDigest: '', config: '' });
+      expect(plugin.settings).toEqual({ executable: '', confirmedExecutable: '', confirmedDigest: '', config: '', density: 'comfortable' });
     }
   });
 
@@ -134,7 +195,7 @@ describe('project binding settings', () => {
     expect(tab.getControlValue('config')).toBe('sub/.beans.yml');
     expect(tab.getControlValue('confirmedExecutable')).toBeUndefined();
     expect(plugin.settings.confirmedExecutable).toBe('');
-    expect(shell.data).toEqual({ executable: '/opt/beans', confirmedExecutable: '', confirmedDigest: '', config: 'sub/.beans.yml', drafts: [] });
+    expect(shell.data).toEqual({ executable: '/opt/beans', confirmedExecutable: '', confirmedDigest: '', config: 'sub/.beans.yml', density: 'comfortable', drafts: [] });
   });
 
   it('requires an explicit trust step, then binds and remembers it across reloads', async () => {

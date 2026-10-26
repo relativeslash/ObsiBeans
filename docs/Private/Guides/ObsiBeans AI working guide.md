@@ -52,6 +52,17 @@ Views and commands read and change the project only through `WorkspaceState` (`s
 
 **Testing with it.** `test/state/support.ts` has `FakePort` (every call waits until the test settles it, so out-of-order answers are easy to stage), `bean`, `detail`, `read`, `harness` and `loaded`; use `vi.useFakeTimers()` for debounce. `test/plugin/state.test.ts` binds the plugin to a scripted Beans and drives the stub's `vault.trigger` events; `test/native/smoke.ts` does the same with real files in a real Obsidian.
 
+## Views
+
+Two `ItemView`s (`src/views/workspace-view.ts`) share one Svelte lifecycle: `WorkspaceView` (navigation, list, inspector, status bar) and `IssueView` (one bean per tab, identified by its full ID; `plugin.openIssue(id)` reveals an open tab instead of duplicating it). Views receive a `WorkspaceHost` (`host.ts`), never the plugin; the plugin implements it. Call `follow(host)` (`follow.svelte.ts`) in a component to get the current `state`, its `snapshot` and the binding text as reactive values; it re-attaches on every rebind. Name a local `project`, not `state`: Svelte reads `$state` as a store of `state`.
+
+- Built-in navigation entries are fixed filter sets in `src/state/navigation.ts` (`navFilters`); choosing one replaces all filters, so the entry is what the list shows. Readiness always uses the backend's meaning.
+- Saved layout (navigation entry, inspector width) lives in the view's `getState`/`setState`, so Obsidian stores it with the workspace layout; `setState` remounts the component. Density is a plugin setting and reaches views through the host.
+- Below 760 px the panes stack (views, list, details with Back). The list stays mounted but hidden and puts its scroll position and focused row back from `WorkspaceState.setViewState` when it returns.
+- Key keyed `{#each}` blocks by something unique per file: two files can claim one ID, and a duplicate key stops the whole component tree from updating (found in the native smoke test).
+- Headless component tests: `test/views/workspace-view.test.ts` has a `FakeHost`, a `ResizeObserver` stand-in, and `resize()`. jsdom has no `ResizeObserver`, and the plugin tests stub it too.
+- Native smoke: `yarn test:native` drives the real workspace, issue tabs, narrow pane and close command. It collapses Obsidian's sidebars first because the 1024 px sandbox window would otherwise make the pane narrow.
+
 ## Growing this guide
 
 Expand this guide as development produces verified knowledge: module entry points, debugging hints, Beans integration pitfalls, and release checks. Link to authoritative project information or focused guides rather than duplicating their rules and version tables.

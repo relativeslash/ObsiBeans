@@ -17,17 +17,32 @@ export interface Command {
   readonly id: string;
   readonly name: string;
   readonly callback?: () => unknown;
+  readonly checkCallback?: (checking: boolean) => boolean;
 }
 
 export abstract class View {
   readonly leaf: WorkspaceLeaf;
+  readonly app: { readonly workspace: Workspace };
   readonly containerEl = document.createElement('div');
 
   constructor(leaf: WorkspaceLeaf) {
     this.leaf = leaf;
+    this.app = { workspace: leaf.workspace };
   }
 
   abstract getViewType(): string;
+
+  getState(): Record<string, unknown> {
+    return {};
+  }
+
+  /** The state Obsidian last restored this view with. */
+  restored: unknown;
+
+  setState(state: unknown, result: object): Promise<void> {
+    this.restored = { state, result };
+    return Promise.resolve();
+  }
 
   protected onOpen(): Promise<void> {
     return Promise.resolve();
@@ -53,18 +68,19 @@ export abstract class ItemView extends View {
 
 export class WorkspaceLeaf {
   view: View | undefined;
-  private readonly workspace: Workspace;
+  readonly workspace: Workspace;
 
   constructor(workspace: Workspace) {
     this.workspace = workspace;
   }
 
-  async setViewState(state: { type: string }): Promise<void> {
+  async setViewState(state: { type: string; state?: unknown }): Promise<void> {
     const create = this.workspace.viewCreators.get(state.type);
     if (!create) throw new Error(`Unknown view type ${state.type}`);
     await this.view?.close();
     this.view = create(this);
     await this.view.open();
+    await this.view.setState(state.state ?? {}, {});
   }
 
   async detach(): Promise<void> {
@@ -78,6 +94,17 @@ export class Workspace {
   readonly viewCreators = new Map<string, (leaf: WorkspaceLeaf) => View>();
   readonly leaves: WorkspaceLeaf[] = [];
   readonly revealed: WorkspaceLeaf[] = [];
+  /** Test hook: the leaf `getActiveViewOfType` reports. */
+  activeLeaf: WorkspaceLeaf | undefined;
+  layoutSaves = 0;
+
+  requestSaveLayout(): void {
+    this.layoutSaves++;
+  }
+
+  getActiveViewOfType(): View | null {
+    return this.activeLeaf?.view ?? null;
+  }
 
   getLeavesOfType(type: string): WorkspaceLeaf[] {
     return this.leaves.filter((leaf) => leaf.view?.getViewType() === type);
@@ -93,6 +120,11 @@ export class Workspace {
     this.revealed.push(leaf);
     return Promise.resolve();
   }
+}
+
+/** Records the icon instead of drawing it. */
+export function setIcon(parent: HTMLElement, iconId: string): void {
+  parent.dataset.icon = iconId;
 }
 
 export class FileSystemAdapter {
@@ -193,6 +225,13 @@ export class Plugin {
   saveData(data: unknown): Promise<void> {
     this.data = structuredClone(data);
     return Promise.resolve();
+  }
+
+  readonly ribbon: { readonly icon: string; readonly title: string; readonly callback: () => unknown }[] = [];
+
+  addRibbonIcon(icon: string, title: string, callback: () => unknown): HTMLElement {
+    this.ribbon.push({ icon, title, callback });
+    return document.createElement('div');
   }
 
   addCommand(command: Command): Command {
