@@ -72,7 +72,7 @@ Upgrades follow `ENG-BUILD-003`: change the catalog entry, run `yarn install`, r
 | `src/plugin/` | Plugin shell: `main.ts` (bundle entry), `settings.ts` (stored settings and the settings host contract), settings tab, command and view registration, project binding lifecycle |
 | `src/views/` | `ItemView` hosts, Svelte components, the localization API (`i18n.ts`) and English catalog (`messages.en.ts`) |
 | `src/state/` | Application state and actions (not created yet) |
-| `src/adapter/` | Beans process adapter: `process.ts` (bounded process execution and `ProcessRunner` ownership), `binding.ts` (executable trust, project and task-root binding, `runBeans`), `task-root.ts` (task-root file scan) |
+| `src/adapter/` | Beans process adapter: `process.ts` (bounded process execution and `ProcessRunner` ownership), `binding.ts` (executable trust, project and task-root binding, `runBeans`), `task-root.ts` (task-root file scan), `beans-model.ts` (value lists, data shapes, error variants, local validation), `beans-graphql.ts` (one GraphQL call, error classification, response field readers), `beans-read.ts` (list, detail, readiness filter, blocking graph, task-root index), `beans-guard.ts` (revision hash and frontmatter preservation check), `beans-write.ts` (`createBean`, `mutateBean`) |
 | `test/<layer>/` | Headless tests per layer; `test/tools/` tests the gates |
 | `test/support/obsidian.ts` | Runtime stand-in for the `obsidian` module in tests, plus `bridge()` for the compile-time type cast |
 | `test/native/smoke.ts` | Native-window smoke test |
@@ -97,13 +97,13 @@ All commands run from the repository root and were verified on 2026-10-26.
 | Tests with per-module and changed-line coverage | `yarn coverage` |
 | Development bundle in `dist/` | `yarn build` |
 | Native-window smoke test (builds first) | `yarn test:native` |
-| Process and binding layer against the audited release binary (optional, needs the binary) | `OBSIBEANS_BEANS_RELEASE=/absolute/path/to/beans yarn vitest run test/adapter/beans-release.test.ts` |
+| Process, binding and read/write adapter against the audited release binary (optional, needs the binary) | `OBSIBEANS_BEANS_RELEASE=/absolute/path/to/beans yarn vitest run test/adapter/beans-release.test.ts test/adapter/beans-adapter-release.test.ts` |
 
 `yarn build` writes `dist/main.js` (CommonJS, unminified, inline source map) and would add `dist/styles.css` when components declare styles. Two builds produce identical bytes, also across Node 24 and 26 and across checkout locations. Release packaging is not set up; it belongs to the packaging task.
 
 `yarn test:native` needs a desktop session, and its Obsidian window appears briefly. It opens an empty disposable vault, then copies `dist/` and `manifest.json` into it; a vault that already has plugins when first opened shows a trust prompt, and the test fails if any dialog is open. It starts a separate Obsidian instance with its own profile and runtime directories, so a running Obsidian, its vaults and its CLI socket are untouched; the test fails if that socket changes. It drives that instance over the Chrome DevTools Protocol, then stops the process group and deletes the sandbox. `OBSIDIAN_BIN` sets the launcher (default `obsidian`) and `OBSIDIAN_ASAR` the app package of the target version (default `~/.config/obsidian/obsidian-1.14.5.asar`, which Obsidian downloads when it updates). It fails unless the app reports exactly `minAppVersion`.
 
-`OBSIBEANS_BEANS_RELEASE` must name the verified v0.4.2 release binary, obtained and checked as in the [[docs/Private/Design/Beans 0.4.2 contract.md|contract note]] (`audit.sh` downloads and verifies it in a temporary directory). Without it, `yarn verify` skips those four tests; a skip is an unexecuted check, not a pass. They run in a disposable vault and assert that nothing outside it changes.
+`OBSIBEANS_BEANS_RELEASE` must name the verified v0.4.2 release binary, obtained and checked as in the [[docs/Private/Design/Beans 0.4.2 contract.md|contract note]] (`audit.sh` downloads and verifies it in a temporary directory). Without it, `yarn verify` skips those nineteen tests; a skip is an unexecuted check, not a pass. They run in a disposable vault and assert that nothing outside it changes.
 
 ### Supported desktop platforms
 

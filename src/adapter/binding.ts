@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { constants, createReadStream } from 'node:fs';
 import { access, readFile, realpath, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { STATUSES, TYPES } from './beans-model.ts';
 import type { ProcessResult, ProcessRunner } from './process.ts';
 
 /** The audited release this adapter is written for. See the Beans 0.4.2 contract note. */
@@ -17,6 +18,9 @@ const MAX_CONFIG_BYTES = 64 * 1024;
 const DEFAULT_PREFIX = '';
 const DEFAULT_ID_LENGTH = 4;
 const MAX_ID_LENGTH = 64;
+/** Beans' own `default_status` fallback, and the adapter's `default_type` fallback (the CLI would pick milestone; see the contract note). */
+const FALLBACK_STATUS = 'todo';
+const FALLBACK_TYPE = 'task';
 
 /** Why no usable project is bound. Fields hold only strings and numbers, so views can format them directly. */
 export type BindingDiagnostic =
@@ -50,9 +54,16 @@ export interface Binding {
   readonly taskRoot: string;
   readonly prefix: string;
   readonly idLength: number;
+  /** Effective creation defaults. Beans' GraphQL ignores them, so creation must send them explicitly. */
+  readonly defaults: ProjectDefaults;
   readonly version: string;
   /** True only for the audited release. A dev build binds, but only the contract's fallbacks are known to hold. */
   readonly verified: boolean;
+}
+
+export interface ProjectDefaults {
+  readonly status: string;
+  readonly type: string;
 }
 
 /** What the user confirmed: the executable's real path and a digest of its content at that moment. */
@@ -121,6 +132,7 @@ interface ProjectConfig {
   readonly taskRoot: string;
   readonly prefix: string;
   readonly idLength: number;
+  readonly defaults: ProjectDefaults;
 }
 
 async function readProjectConfig(vaultRoot: string, config: string, parseYaml: (text: string) => unknown): Promise<Result<ProjectConfig>> {
@@ -147,12 +159,21 @@ async function readProjectConfig(vaultRoot: string, config: string, parseYaml: (
   }
   const beans = typeof root === 'object' && root !== null && 'beans' in root ? root.beans : undefined;
   if (typeof beans !== 'object' || beans === null) return invalid('missing the beans section');
-  const { path, prefix = DEFAULT_PREFIX, id_length: idLength = DEFAULT_ID_LENGTH } = beans as Record<string, unknown>;
+  const {
+    path,
+    prefix = DEFAULT_PREFIX,
+    id_length: idLength = DEFAULT_ID_LENGTH,
+    default_status: status = FALLBACK_STATUS,
+    default_type: type = FALLBACK_TYPE,
+  } = beans as Record<string, unknown>;
   if (typeof path !== 'string' || path === '') return invalid('beans.path must be a non-empty string');
   if (typeof prefix !== 'string') return invalid('beans.prefix must be a string');
   if (typeof idLength !== 'number' || !Number.isInteger(idLength) || idLength < 1 || idLength > MAX_ID_LENGTH) {
     return invalid(`beans.id_length must be a whole number from 1 to ${String(MAX_ID_LENGTH)}`);
   }
+
+  if (typeof status !== 'string' || !(STATUSES as readonly string[]).includes(status)) return invalid(`beans.default_status must be one of ${STATUSES.join(', ')}`);
+  if (typeof type !== 'string' || !(TYPES as readonly string[]).includes(type)) return invalid(`beans.default_type must be one of ${TYPES.join(', ')}`);
 
   let taskRoot;
   try {
@@ -162,7 +183,7 @@ async function readProjectConfig(vaultRoot: string, config: string, parseYaml: (
   }
   if (!isInside(vault, taskRoot)) return fail({ code: 'task-root-outside-vault', path });
   if (!(await stat(taskRoot)).isDirectory()) return fail({ code: 'task-root-not-directory', path });
-  return { ok: true, value: { configPath, taskRoot, prefix, idLength } };
+  return { ok: true, value: { configPath, taskRoot, prefix, idLength, defaults: { status, type } } };
 }
 
 function describeFailure(result: ProcessResult, path: string): BindingDiagnostic {
@@ -236,12 +257,12 @@ async function bind(request: BindingRequest): Promise<Result<Binding>> {
 
   const project = await readProjectConfig(vaultRoot, config, parseYaml);
   if (!project.ok) return project;
-  const { configPath, taskRoot, prefix, idLength } = project.value;
+  const { configPath, taskRoot, prefix, idLength, defaults } = project.value;
   const projectDir = dirname(configPath);
 
   const version = await probeVersion(runner, inspected.value, projectDir);
   if (!version.ok) return version;
-  return { ok: true, value: { executable: inspected.value, configPath, projectDir, taskRoot, prefix, idLength, version: version.value, verified: version.value === SUPPORTED_BEANS_VERSION } };
+  return { ok: true, value: { executable: inspected.value, configPath, projectDir, taskRoot, prefix, idLength, defaults, version: version.value, verified: version.value === SUPPORTED_BEANS_VERSION } };
 }
 
 /**
