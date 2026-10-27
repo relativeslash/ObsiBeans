@@ -7,7 +7,7 @@ priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-27T03:01:09Z
+updated_at: 2026-10-27T03:13:58Z
 parent: OB-1bvb
 blocked_by:
     - OB-7a9z
@@ -68,3 +68,5 @@ Bulk status/type/priority/parent editing over the explicit selection, one indepe
 - Beans-side validation of a rejected bulk value is covered by the existing adapter tests, not by a new bulk case.
 - Retry may use data a little older than the re-read if another write supersedes the load; the revision guard then reports a conflict instead of overwriting.
 - Keyboard shortcuts for bulk apply (TUI `s`, `t`, `P`, `p` with a selection) are not added; the toolbar is the keyboard-accessible control.
+
+Follow-up: tracked relative symlinks `.obsidian/plugins/obsibeans/{main.js,styles.css,manifest.json}` point at `../../../dist/*` and `../../../manifest.json`, and `obsibeans` is enabled in `community-plugins.json`. They dangle until `yarn build` has run (verified: `yarn verify` passes with `dist/` absent); the build output itself stays untracked.
