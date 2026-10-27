@@ -111,6 +111,11 @@ export class WorkspaceState {
     this.current = this.build();
   }
 
+  /** The fixed value lists, for pickers and sorting. */
+  get vocabulary(): Vocabulary {
+    return this.options.vocabulary;
+  }
+
   /** Starts the first load. Calling it again, or after `dispose`, does nothing. */
   start(): Promise<void> {
     if (this.started || this.disposed) return Promise.resolve();

@@ -294,6 +294,30 @@ console.log(JSON.stringify({ beans }));
     await session.waitFor(`!document.querySelector('.obsibeans-workspace .banner[role="alert"]')`, 'the stale banner to clear after Refresh');
     check(true, 'Refresh in the stale banner recovers when Beans is back');
 
+    // A large project in the real app: rows render, search narrows them, and the keyboard moves through them.
+    const bulk = Array.from({ length: 2000 }, (_, n) => join(vault, 'Task root', `FX-l${String(n).padStart(4, '0')}--bulk.md`));
+    for (const [n, file] of bulk.entries()) writeFileSync(file, `---\ntitle: Bulk ${String(n)}\n---\n`);
+    const rowCount = `document.querySelectorAll('.obsibeans-workspace button.row').length`;
+    const loadStart = Date.now();
+    await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace .toolbar button')].find((button) => button.textContent.trim() === ${JSON.stringify(en['action.refresh'])}).click()`);
+    await session.waitFor(`${rowCount} === 2002`, 'two thousand rows to render');
+    const rendered = Date.now() - loadStart;
+    console.log(`INFO 2002 rows loaded and rendered in ${String(rendered)} ms`);
+    check(rendered < 10_000, 'a large list loads and renders in a few seconds');
+    await session.evaluate(`(() => { const input = document.querySelector('.obsibeans-workspace input[type="search"]'); input.value = 'bulk 199'; input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+    await session.waitFor(`${rowCount} === 12`, 'search to narrow the list to the 12 beans whose title or ID contains "199"');
+    check(await session.evaluate(`document.querySelector('.obsibeans-workspace .matches')?.textContent.includes('12 matches of 2002')`), 'the match count states matches out of the whole project');
+    await session.evaluate(`(() => { const first = document.querySelector('.obsibeans-workspace button.row'); first.focus(); first.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true, cancelable: true })); })()`);
+    check(await session.evaluate(`document.activeElement === document.querySelectorAll('.obsibeans-workspace button.row')[1]`), 'j moves focus to the next row');
+    await session.evaluate(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }))`);
+    check(await session.evaluate(`document.querySelector('.obsibeans-workspace .selection [role="status"]')?.textContent.includes('1 bean selected')`), 'Space selects the focused row');
+    await session.evaluate(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true }))`);
+    check(await session.evaluate(`document.activeElement === document.querySelector('.obsibeans-workspace input[type="search"]')`), '/ focuses the search field');
+    await session.evaluate(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))`);
+    await session.waitFor(`${rowCount} === 2002`, 'Escape to clear the search');
+    // The files stay: deleting two thousand files at once makes Obsidian's own file watcher report read errors for them.
+    await session.evaluate(`app.plugins.plugins[${id}].state.clearSelection()`);
+
     // Close view: the command closes only the active Beans tab; Obsidian keeps running.
     await session.evaluate(`app.workspace.setActiveLeaf(app.workspace.getLeavesOfType('obsibeans-issue')[0], { focus: true })`);
     await session.evaluate(`app.commands.executeCommandById(${id} + ':close-view')`);

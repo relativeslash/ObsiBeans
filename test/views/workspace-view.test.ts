@@ -103,8 +103,16 @@ async function open<V extends WorkspaceView | IssueView>(create: new (...args: n
   };
 }
 
-const rows = (el: HTMLElement): string[] => [...el.querySelectorAll<HTMLElement>('.row')].map((row) => row.dataset.id ?? '');
+/** The matching rows. Context rows are ancestors drawn for orientation, so they are not rows of the result. */
+const rows = (el: HTMLElement): string[] => [...el.querySelectorAll<HTMLElement>('.row:not([data-context])')].map((row) => row.dataset.id ?? '');
 const selected = (el: HTMLElement): string | null => el.querySelector('.row[aria-current="true"]')?.getAttribute('data-id') ?? null;
+/** Follows a related-bean link in the inspector; the list row of the same bean has the same text. */
+async function link(el: HTMLElement, id: string): Promise<void> {
+  const target = [...el.querySelectorAll<HTMLButtonElement>('.inspector .link')].find((one) => one.textContent.includes(id));
+  if (!target) throw new Error(`No link to ${id}`);
+  target.click();
+  await tick();
+}
 const inspectorTitle = (el: HTMLElement): string | undefined => el.querySelector('.inspector h2')?.textContent;
 
 async function bound(beans = [bean(A, { status: 'in-progress', type: 'epic', childIds: [B] }), bean(B, { parentId: A, blockedByIds: [C] }), bean(C, { type: 'milestone' })], extra = {}) {
@@ -223,11 +231,11 @@ describe('built-in navigation', () => {
 
   it('falls back to defaults for damaged saved layout and remounts when it is restored', async () => {
     const { view, el } = await open(WorkspaceView, { layout: { nav: 'nope', inspectorWidth: 'wide' } });
-    expect(view.getState().layout).toEqual({ nav: 'all', inspectorWidth: 360 });
+    expect(view.getState().layout).toEqual({ nav: 'all', columns: ['id', 'status', 'type', 'priority'], sort: { key: 'default', descending: false }, inspectorWidth: 360 });
     expect(el.querySelectorAll('section[aria-label]')).toHaveLength(1);
 
     await view.setState({ layout: { nav: 'epics', inspectorWidth: 9999 } }, bridge({}));
-    expect(view.getState().layout).toEqual({ nav: 'epics', inspectorWidth: 720 });
+    expect(view.getState().layout).toMatchObject({ nav: 'epics', inspectorWidth: 720 });
     expect(el.querySelectorAll('section[aria-label]')).toHaveLength(1);
   });
 });
@@ -257,9 +265,9 @@ describe('inspector and related-item navigation', () => {
     list?.dispatchEvent(new Event('scroll'));
     expect(ui.button(en['action.back'])).toBeUndefined();
 
-    await ui.press(`${A} Title ${A}`);
+    await link(ui.el, A);
     expect(inspectorTitle(ui.el)).toBe(`Title ${A}`);
-    await ui.press(`${B} Title ${B}`);
+    await link(ui.el, B);
     expect(inspectorTitle(ui.el)).toBe(`Title ${B}`);
 
     await ui.press(en['action.back']);
