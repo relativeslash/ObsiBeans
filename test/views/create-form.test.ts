@@ -14,7 +14,7 @@ describe('creation form values', () => {
   });
 
   it('round-trips through its stored text', () => {
-    const values = { title: 'T', type: 'bug', status: 'draft', priority: 'high', tags: 'a b', body: 'Body', expanded: true };
+    const values = { title: 'T', type: 'bug', status: 'draft', priority: 'high', tags: 'a b', body: 'Body', parent: 'FX-aaaaa', expanded: true };
 
     expect(parseForm(serializeForm(values))).toEqual(values);
   });
@@ -31,9 +31,9 @@ describe('creation form values', () => {
   });
 
   it('sends every chosen field, and the description only when it has text', () => {
-    const values = { title: 'T', type: 'bug', status: 'in-progress', priority: 'high', tags: 'a, b', body: 'Text', expanded: true };
+    const values = { title: 'T', type: 'bug', status: 'in-progress', priority: 'high', tags: 'a, b', body: 'Text', parent: 'FX-aaaaa', expanded: true };
 
-    expect(toNewBean(values, false)).toEqual({ title: 'T', type: 'bug', status: 'in-progress', priority: 'high', tags: ['a', 'b'], body: 'Text' });
+    expect(toNewBean(values, false)).toEqual({ title: 'T', type: 'bug', status: 'in-progress', priority: 'high', tags: ['a', 'b'], body: 'Text', parentId: 'FX-aaaaa' });
     expect(toNewBean({ ...values, body: ' \n' }, false)).not.toHaveProperty('body');
   });
 

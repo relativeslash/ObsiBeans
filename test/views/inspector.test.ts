@@ -21,7 +21,7 @@ describe('inspector fields', () => {
   it('saves a title as one field change, shows it pending, then confirms it at the field', async () => {
     const ui = await open(await loaded(beans()));
     await ui.show(A);
-    expect(ui.el.querySelector('.pane-detail .buttons')).toBeNull();
+    expect(ui.el.querySelector('.pane-detail .fields .buttons')).toBeNull();
 
     await ui.text(ui.field<HTMLInputElement>('title'), 'New title');
     await ui.press(en['field.save']);

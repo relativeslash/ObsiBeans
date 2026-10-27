@@ -33,6 +33,8 @@
   let navOpen = $state(false);
   let detailOpen = $state(false);
   let creating = $state(false);
+  /** The parent a new-child action pre-fills; the toolbar and list actions leave it open. */
+  let newChildOf = $state<string | undefined>();
   let dragging = $state<{ readonly startX: number; readonly startWidth: number } | undefined>();
 
   const narrow = $derived(width > 0 && width < NARROW_PX);
@@ -58,8 +60,9 @@
     commit({ ...current, nav: id });
   }
 
-  function startCreating(): void {
+  function startCreating(parent?: string): void {
     navOpen = false;
+    newChildOf = parent;
     creating = true;
   }
 
@@ -128,7 +131,7 @@
     {/if}
     <span class="spacer"></span>
     {#if project}
-      <button type="button" onclick={startCreating}><span use:icon={'plus'}></span> {t('create.open')}</button>
+      <button type="button" onclick={() => { startCreating(); }}><span use:icon={'plus'}></span> {t('create.open')}</button>
       <button type="button" disabled={snapshot?.refreshing ?? false} onclick={() => void project.refresh()}>
         <span use:icon={'refresh-cw'}></span> {t('action.refresh')}
       </button>
@@ -153,7 +156,7 @@
           onPrefs={(patch) => { commit({ ...current, ...patch }); }}
           onOpen={openRow}
           onShowAll={() => { selectNav('all'); }}
-          onCreate={startCreating}
+          onCreate={() => { startCreating(); }}
           onReset={() => { project.setFilters(navFilters(current.nav)); }}
         />
       </div>
@@ -179,7 +182,7 @@
       {#if !narrow || showDetails}
         <div class="pane-detail">
           {#if creating}
-            <CreateForm {project} {snapshot} onDone={created} onCancel={() => { creating = false; }} />
+            <CreateForm {project} {snapshot} parentId={newChildOf} onDone={created} onCancel={() => { creating = false; }} />
           {:else}
             <Inspector
               {host}
@@ -188,6 +191,7 @@
               id={snapshot.selectedId}
               onOpen={openLink}
               onBack={narrow || trail.length > 0 ? goBack : undefined}
+              onNewChild={startCreating}
               onOpenTab={snapshot.selectedId === null ? undefined : () => void host.openIssue(snapshot.selectedId ?? '')}
             />
           {/if}

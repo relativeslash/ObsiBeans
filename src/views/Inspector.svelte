@@ -1,11 +1,14 @@
 <script lang="ts">
   import type { Snapshot } from '../state/model.ts';
-  import { relationsOf, type Related } from '../state/navigation.ts';
+  import { relationsOf } from '../state/navigation.ts';
+  import { canHaveChildren } from '../state/relations.ts';
   import type { WorkspaceState } from '../state/workspace-state.ts';
   import Description from './Description.svelte';
   import Fields from './Fields.svelte';
   import type { WorkspaceHost } from './host.ts';
-  import { t, type MessageKey } from './i18n.ts';
+  import { t } from './i18n.ts';
+  import Links from './Links.svelte';
+  import Parent from './Parent.svelte';
 
   interface Props {
     host: WorkspaceHost;
@@ -18,27 +21,21 @@
     onBack?: (() => void) | undefined;
     /** Present when the bean can still be opened in its own tab. */
     onOpenTab?: (() => void) | undefined;
+    /** Opens the creation form with this bean as the parent. */
+    onNewChild?: ((parentId: string) => void) | undefined;
   }
-  let { host, project, snapshot, id, onOpen, onBack, onOpenTab }: Props = $props();
+  let { host, project, snapshot, id, onOpen, onBack, onOpenTab, onNewChild }: Props = $props();
 
   let fields: Fields | undefined = $state();
   let description: Description | undefined = $state();
+  let parent: Parent | undefined = $state();
+  let links: Links | undefined = $state();
   /** The outcome of the last action (copy, open): a status line, empty when there is nothing to say. */
   let note = $state('');
 
   const bean = $derived(snapshot.beans.find((one) => one.id === id));
   const relations = $derived(id === null ? undefined : relationsOf(snapshot.beans, id));
   const orphan = $derived(snapshot.drafts.find((entry) => entry.draft.kind === 'description' && entry.draft.key === id)?.draft);
-  const sections = $derived(
-    relations
-      ? ([
-          ['inspector.parent', relations.parent ? [relations.parent] : []],
-          ['inspector.children', relations.children],
-          ['inspector.blockedBy', relations.blockedBy],
-          ['inspector.blocks', relations.blocks],
-        ] as const satisfies readonly (readonly [MessageKey, readonly Related[]])[])
-      : [],
-  );
 
   async function copy(text: string | undefined, done: string): Promise<void> {
     if (text === undefined) {
@@ -59,7 +56,7 @@
 
   const isText = (target: HTMLElement): boolean => target.matches('input:not([type="checkbox"]), select, textarea') || target.isContentEditable;
 
-  /** The TUI's detail keys that this view supports: `s`, `t`, `P` pick a field, `e` edits the description, `y` copies the ID. */
+  /** The TUI's detail keys that this view supports: `s`, `t`, `P` pick a field, `e` edits the description, `p` picks the parent, `b` picks a bean to block, `y` copies the ID. */
   function onKey(event: KeyboardEvent): void {
     if (!bean || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || isText(event.target as HTMLElement)) return;
     const handlers: Record<string, () => unknown> = {
@@ -67,6 +64,8 @@
       t: () => fields?.focus('type'),
       P: () => fields?.focus('priority'),
       e: () => description?.edit(),
+      p: () => parent?.open(),
+      b: () => links?.openBlocks(),
       y: () => copy(bean.id, t('copy.done', { count: 1 })),
     };
     const handler = handlers[event.key];
@@ -116,28 +115,35 @@
       <Fields bind:this={fields} {project} {snapshot} {bean} />
       <Description bind:this={description} {host} {project} {snapshot} {bean} />
     {/key}
-    {#each sections as [name, items] (name)}
-      <section>
-        <h3>{t(name)}</h3>
-        {#if items.length === 0}
-          <p class="empty">{t('inspector.noneRelated')}</p>
+    {#key bean.id}<Parent bind:this={parent} {project} {snapshot} {bean} {onOpen} />{/key}
+    <section>
+      <h3>{t('inspector.children')}</h3>
+      {#if !relations || relations.children.length === 0}
+        <p class="empty">{t('inspector.noneRelated')}</p>
+      {:else}
+        <ul>
+          {#each relations.children as related (related.id)}
+            <li>
+              {#if related.bean}
+                <button type="button" class="link" onclick={() => { onOpen(related.id); }}>
+                  <span class="id">{related.id}</span> {related.bean.title}
+                </button>
+              {:else}
+                <span class="id">{t('inspector.missing', { id: related.id })}</span>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      {/if}
+      {#if onNewChild}
+        {#if canHaveChildren(bean.type)}
+          <button type="button" onclick={() => { onNewChild(bean.id); }}>{t('children.new')}</button>
         {:else}
-          <ul>
-            {#each items as related (related.id)}
-              <li>
-                {#if related.bean}
-                  <button type="button" class="link" onclick={() => { onOpen(related.id); }}>
-                    <span class="id">{related.id}</span> {related.bean.title}
-                  </button>
-                {:else}
-                  <span class="id">{t('inspector.missing', { id: related.id })}</span>
-                {/if}
-              </li>
-            {/each}
-          </ul>
+          <p class="empty">{t('children.none', { type: bean.type })}</p>
         {/if}
-      </section>
-    {/each}
+      {/if}
+    </section>
+    {#key bean.id}<Links bind:this={links} {project} {snapshot} {bean} {onOpen} />{/key}
   {/if}
 </article>
 

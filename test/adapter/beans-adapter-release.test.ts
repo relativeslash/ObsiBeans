@@ -5,6 +5,7 @@ import type { BeansContext } from '../../src/adapter/beans-graphql.ts';
 import type { BeanDetail } from '../../src/adapter/beans-model.ts';
 import { READY_FILTER, blockingGraph, getBean, listBeans } from '../../src/adapter/beans-read.ts';
 import { createBean, mutateBean, type Change } from '../../src/adapter/beans-write.ts';
+import { PARENT_TYPES } from '../../src/state/relations.ts';
 import { bindProject } from '../../src/adapter/binding.ts';
 import { ProcessRunner } from '../../src/adapter/process.ts';
 import { parseYaml } from '../support/obsidian.ts';
@@ -169,6 +170,23 @@ describe.skipIf(release === '')('Beans adapter against a real binary', () => {
     expect(await edit(task, { kind: 'parent', parentId: task.id })).toMatchObject({ ok: false, error: { kind: 'validation', code: 'input' } });
     expect(await edit(milestone, { kind: 'parent', parentId: epic.id })).toMatchObject({ ok: false, error: { kind: 'validation', code: 'backend' } });
     expect(await edit(task, { kind: 'parent', parentId: 'FX-qqqqq' })).toMatchObject({ ok: false, error: { kind: 'validation', code: 'backend' } });
+  });
+
+  it('accepts exactly the parent types the editors offer', async () => {
+    const byType = new Map<string, BeanDetail>();
+    for (const type of Object.keys(PARENT_TYPES)) byType.set(type, await make(type, { type }));
+    const seen: string[] = [];
+
+    for (const [childType, allowed] of Object.entries(PARENT_TYPES)) {
+      for (const parentType of Object.keys(PARENT_TYPES)) {
+        const child = await reread(byType.get(childType) as BeanDetail);
+        const result = await edit(child, { kind: 'parent', parentId: (byType.get(parentType) as BeanDetail).id });
+        if (result.ok) must(await edit(result.value, { kind: 'parent', parentId: null }));
+        if (result.ok !== allowed.includes(parentType)) seen.push(`${childType} under ${parentType}: Beans ${result.ok ? 'accepted' : 'rejected'}`);
+      }
+    }
+
+    expect(seen).toEqual([]);
   });
 
   it('edits blocking in both stored directions and reads them as one graph', async () => {
