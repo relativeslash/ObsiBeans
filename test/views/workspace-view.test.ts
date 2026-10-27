@@ -244,7 +244,7 @@ describe('built-in navigation', () => {
 
   it('falls back to defaults for damaged saved layout and remounts when it is restored', async () => {
     const { view, el } = await open(WorkspaceView, { layout: { nav: 'nope', inspectorWidth: 'wide' } });
-    expect(view.getState().layout).toEqual({ nav: 'all', columns: ['id', 'status', 'type', 'priority'], sort: { key: 'default', descending: false }, inspectorWidth: 360 });
+    expect(view.getState().layout).toEqual({ nav: 'all', columns: ['id', 'status', 'type', 'priority'], sort: { key: 'default', descending: false }, view: 'list', swimlanes: 'none', inspectorWidth: 360 });
     expect(el.querySelectorAll('section[aria-label]')).toHaveLength(1);
 
     await view.setState({ layout: { nav: 'epics', inspectorWidth: 9999 } }, bridge({}));

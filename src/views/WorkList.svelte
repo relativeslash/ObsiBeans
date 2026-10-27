@@ -4,6 +4,7 @@
   import type { BeanSummary, Change, Snapshot } from '../state/model.ts';
   import type { WorkspaceState } from '../state/workspace-state.ts';
   import { describeError } from './errors.ts';
+  import Board from './Board.svelte';
   import BulkBar from './BulkBar.svelte';
   import { t } from './i18n.ts';
   import type { Layout } from './layout.ts';
@@ -16,7 +17,9 @@
     active: boolean;
     columns: Layout['columns'];
     sort: Layout['sort'];
-    onPrefs: (patch: Partial<Pick<Layout, 'columns' | 'sort'>>) => void;
+    view: Layout['view'];
+    swimlanes: Layout['swimlanes'];
+    onPrefs: (patch: Partial<Pick<Layout, 'columns' | 'sort' | 'view' | 'swimlanes'>>) => void;
     onOpen: (id: string) => void;
     onShowAll: () => void;
     /** Opens the creation form (the TUI's `c`). */
@@ -24,9 +27,10 @@
     /** Back to the filters of the current navigation entry. */
     onReset: () => void;
   }
-  let { project, snapshot, active, columns, sort, onPrefs, onOpen, onShowAll, onReset, onCreate }: Props = $props();
+  let { project, snapshot, active, columns, sort, view, swimlanes, onPrefs, onOpen, onShowAll, onReset, onCreate }: Props = $props();
 
-  const VIEW = 'workspace-list';
+  /** Scroll and focus are remembered per representation, so switching back lands where the user left. */
+  const viewKey = $derived(`workspace-${view}`);
   let scroller: HTMLElement | undefined = $state();
   let controls: ListControls | undefined = $state();
   let wasActive = true;
@@ -48,11 +52,16 @@
     return intent?.kind === 'pending' && 'kind' in intent.intent && intent.intent.kind === 'fields' ? (intent.intent[field] ?? bean[field]) : bean[field];
   }
 
+  /** One field edit, for the list's pickers and the board's Move: the same shared mutation either way. */
+  async function change(bean: BeanSummary, field: Field, value: string): Promise<void> {
+    const next = { kind: 'fields', [field]: value } as Change;
+    attempts.set(bean.id, next);
+    await project.mutate(bean.id, next);
+  }
+
   async function edit(event: Event, bean: BeanSummary, field: Field): Promise<void> {
     const select = event.currentTarget as HTMLSelectElement;
-    const change = { kind: 'fields', [field]: select.value } as Change;
-    attempts.set(bean.id, change);
-    await project.mutate(bean.id, change);
+    await change(bean, field, select.value);
     // Unsaved means the cached value stands, so the picker must not keep showing the choice.
     select.value = project.getSnapshot().beans.find((one) => one.id === bean.id)?.[field] ?? select.value;
   }
@@ -100,7 +109,7 @@
   }
 
   const remember = (focusId: string | null): void => {
-    project.setViewState(VIEW, { scrollTop: scroller?.scrollTop ?? 0, focusId });
+    project.setViewState(viewKey, { scrollTop: scroller?.scrollTop ?? 0, focusId });
   };
 
   // A hidden element forgets its scroll position, so the saved one is put back when the list returns.
@@ -108,7 +117,7 @@
     const returning = active && !wasActive;
     wasActive = active;
     if (!active || !scroller) return;
-    const saved = project.getViewState(VIEW);
+    const saved = project.getViewState(viewKey);
     scroller.scrollTop = saved?.scrollTop ?? 0;
     if (returning && saved?.focusId) {
       const root = scroller;
@@ -122,10 +131,10 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="pane" onkeydown={onKey}>
 {#if controlsShown}
-  <ListControls bind:this={controls} {project} {snapshot} {columns} {sort} {onPrefs} {onReset} />
+  <ListControls bind:this={controls} {project} {snapshot} {columns} {sort} {view} {swimlanes} {onPrefs} {onReset} />
 {/if}
 {#if controlsShown}<BulkBar {project} {snapshot} />{/if}
-<div class="list" bind:this={scroller} onscroll={() => { remember(project.getViewState(VIEW)?.focusId ?? null); }}>
+<div class="list" bind:this={scroller} onscroll={() => { remember(project.getViewState(viewKey)?.focusId ?? null); }}>
   {#if snapshot.stale}
     <div class="banner" role="alert">
       <span>{t('list.stale', { time: snapshot.refreshedAt === null ? '' : new Date(snapshot.refreshedAt).toLocaleTimeString('en') })}{snapshot.failure ? ` ${describeError(snapshot.failure)}` : ''}</span>
@@ -163,6 +172,17 @@
       {/if}
       <button type="button" disabled={snapshot.refreshing} onclick={() => void project.refresh()}>{t('action.retry')}</button>
     </div>
+  {:else if view === 'board'}
+    <Board
+      {project}
+      {snapshot}
+      {sort}
+      {swimlanes}
+      {onOpen}
+      onMove={(bean, status) => change(bean, 'status', status)}
+      overwrite={(id) => (attempts.has(id) ? (revision) => { overwrite(id, revision, attempts.get(id) ?? { kind: 'fields' }); } : undefined)}
+      onFocus={remember}
+    />
   {:else}
     <ul class="rows" aria-label={t('list.label', { count: snapshot.visible.length })}>
       <!-- Keyed by file: two files can claim one ID, and a duplicate key would stop the whole view from rendering. -->
