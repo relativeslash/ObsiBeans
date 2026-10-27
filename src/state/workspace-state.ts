@@ -1,6 +1,7 @@
 import type { AdapterError, BeanDetail, BeanSummary, Outcome } from '../adapter/beans-model.ts';
 import type { ProjectRead } from '../adapter/beans-read.ts';
 import type { Change, NewBean } from '../adapter/beans-write.ts';
+import { BulkRunner } from './bulk.ts';
 import { classify, removeDraft, restoration, upsertDraft } from './drafts.ts';
 import { matchesFilters, orderBeans, type Readiness } from './filters.ts';
 import { Loader } from './loader.ts';
@@ -8,6 +9,7 @@ import { localProblem } from './relations.ts';
 import {
   DEFAULT_FILTERS,
   type BeansPort,
+  type BulkEdit,
   type Defaults,
   type Draft,
   type DraftKind,
@@ -70,6 +72,17 @@ function listen(listener: () => void): void {
 export class WorkspaceState {
   private readonly options: WorkspaceStateOptions;
   private readonly loader: Loader;
+  private readonly bulk = new BulkRunner({
+    bean: (id) => this.cache?.byId.get(id),
+    mutate: (id, change, basis) => this.mutate(id, change, basis),
+    reload: async () => {
+      await this.refresh();
+      return this.failure === null;
+    },
+    dismissSave: (id) => { this.dismissSave(id); },
+    changed: () => { this.changed(); },
+    alive: () => !this.disposed,
+  });
   private readonly listeners = new Set<() => void>();
   private readonly viewStates = new Map<string, ViewState>();
   private cache: Cache | undefined;
@@ -259,6 +272,32 @@ export class WorkspaceState {
     return result;
   }
 
+  // --- Bulk edit: one independent mutation per selected bean (see `BulkRunner`) -----------------
+
+  /** Applies `edit` to every selected bean, hidden ones included. False when nothing was started: no selection, or a run is still shown. */
+  applyBulk(edit: BulkEdit): Promise<boolean> {
+    return this.disposed ? Promise.resolve(false) : this.bulk.start(edit, [...this.selected]);
+  }
+
+  /** Stops before the next bean; beans not yet started are reported as cancelled. */
+  cancelBulk(): void {
+    this.bulk.cancel();
+  }
+
+  /** Retries only the beans without a saved result, after re-reading the project. */
+  retryBulk(): Promise<void> {
+    return this.bulk.retry();
+  }
+
+  /** The user checked an uncertain bean against the intent, so it may be retried. */
+  reconcileBulk(id: string): void {
+    this.bulk.reconcile(id);
+  }
+
+  dismissBulk(): void {
+    this.bulk.dismiss();
+  }
+
   /** Creates a bean. `localKey` identifies the form, and its creation draft, until the bean has an ID. */
   async create(localKey: string, bean: NewBean): Promise<MutationResult> {
     const result = await this.write(`${NEW}${localKey}`, bean, () => this.options.port.create(bean));
@@ -444,6 +483,7 @@ export class WorkspaceState {
       drafts: this.drafts.map((draft) => classify(draft, cache?.byId)),
       draftsUnsaved: this.draftsUnsaved,
       notices: this.notices,
+      bulk: this.bulk.current,
     };
   }
 }
