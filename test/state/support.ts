@@ -71,12 +71,19 @@ function deferred<T>(args: readonly unknown[], signal?: AbortSignal): { call: Pe
 /** A Beans port whose every call waits for the test. */
 export class FakePort implements BeansPort {
   readonly lists: Pending<ProjectRead>[] = [];
+  readonly gets: Pending<BeanDetail | null>[] = [];
   readonly mutations: Pending<BeanDetail>[] = [];
   readonly creations: Pending<BeanDetail>[] = [];
 
   list(signal: AbortSignal): Promise<Outcome<ProjectRead>> {
     const { call, promise } = deferred<ProjectRead>([], signal);
     this.lists.push(call);
+    return promise;
+  }
+
+  get(id: string): Promise<Outcome<BeanDetail | null>> {
+    const { call, promise } = deferred<BeanDetail | null>([id]);
+    this.gets.push(call);
     return promise;
   }
 
@@ -114,6 +121,7 @@ export function harness(overrides: Partial<WorkspaceStateOptions> = {}): Harness
   const state = new WorkspaceState({
     port,
     vocabulary: VOCABULARY,
+    defaults: { status: 'todo', type: 'task', priority: 'normal' },
     taskRoot: 'Task root',
     drafts: [],
     saveDrafts: (drafts) => {

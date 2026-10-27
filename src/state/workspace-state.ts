@@ -1,4 +1,4 @@
-import type { AdapterError, BeanDetail, BeanSummary } from '../adapter/beans-model.ts';
+import type { AdapterError, BeanDetail, BeanSummary, Outcome } from '../adapter/beans-model.ts';
 import type { ProjectRead } from '../adapter/beans-read.ts';
 import type { Change, NewBean } from '../adapter/beans-write.ts';
 import { classify, removeDraft, restoration, upsertDraft } from './drafts.ts';
@@ -7,6 +7,7 @@ import { Loader } from './loader.ts';
 import {
   DEFAULT_FILTERS,
   type BeansPort,
+  type Defaults,
   type Draft,
   type DraftKind,
   type Filters,
@@ -23,6 +24,7 @@ import {
 export interface WorkspaceStateOptions {
   readonly port: BeansPort;
   readonly vocabulary: Vocabulary;
+  readonly defaults: Defaults;
   /** Task root relative to the vault, with `/` separators; empty when the task root is the vault root. */
   readonly taskRoot: string;
   /** Drafts as stored. The state keeps the list from here on and hands every change to `saveDrafts`. */
@@ -114,6 +116,20 @@ export class WorkspaceState {
   /** The fixed value lists, for pickers and sorting. */
   get vocabulary(): Vocabulary {
     return this.options.vocabulary;
+  }
+
+  /** The values a creation form shows for fields the user leaves open. */
+  get defaults(): Defaults {
+    return this.options.defaults;
+  }
+
+  /** Reads one bean with its description. Not cached: the caller decides when its revision calls for a re-read. */
+  async detail(id: string): Promise<Outcome<BeanDetail | null>> {
+    try {
+      return await this.options.port.get(id);
+    } catch (error) {
+      return { ok: false, error: { kind: 'backend', code: 'failed', message: error instanceof Error ? error.message : String(error) } };
+    }
   }
 
   /** Starts the first load. Calling it again, or after `dispose`, does nothing. */

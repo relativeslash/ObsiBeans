@@ -30,6 +30,19 @@ class FakeHost implements WorkspaceHost {
     return Promise.resolve();
   }
 
+  renderMarkdown(markdown: string, el: HTMLElement): () => void {
+    el.textContent = markdown;
+    return () => { el.textContent = ''; };
+  }
+
+  openSource(): Promise<boolean> {
+    return Promise.resolve(true);
+  }
+
+  sourceLink(id: string): string {
+    return `[[${id}]]`;
+  }
+
   change(patch: Partial<Pick<FakeHost, 'state' | 'bindingText' | 'density'>>): void {
     Object.assign(this, patch);
     for (const listener of this.listeners) listener();
@@ -247,7 +260,7 @@ describe('inspector and related-item navigation', () => {
     await tick();
 
     expect(selected(ui.el)).toBe(C);
-    const sections = [...ui.el.querySelectorAll('.inspector section')].map((section) => [section.querySelector('h3')?.textContent, section.textContent.replace(/\s+/g, ' ').trim()]);
+    const sections = [...ui.el.querySelectorAll('.inspector section:not(.description)')].map((section) => [section.querySelector('h3')?.textContent, section.textContent.replace(/\s+/g, ' ').trim()]);
     expect(sections).toEqual([
       [en['inspector.parent'], `${en['inspector.parent']} ${en['inspector.noneRelated']}`],
       [en['inspector.children'], `${en['inspector.children']} ${en['inspector.noneRelated']}`],

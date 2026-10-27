@@ -15,4 +15,14 @@ export interface WorkspaceHost {
   onBindingChange(listener: () => void): () => void;
   /** Opens the bean in its own tab, or reveals the tab that already shows it. */
   openIssue(id: string): Promise<void>;
+  /**
+   * Draws untrusted Markdown into `el` with Obsidian's renderer, which sanitizes it; task checkboxes are made
+   * read-only because the inspector's checklist is the only way to change them. `id` names the bean for link
+   * resolution. Returns the function that releases what was drawn.
+   */
+  renderMarkdown(markdown: string, el: HTMLElement, id: string): () => void;
+  /** Opens the bean's Markdown file, resolved by its full ID. False when the file cannot be found in the vault. */
+  openSource(id: string): Promise<boolean>;
+  /** A link to the bean's file in the user's link style, or undefined when the file cannot be found. */
+  sourceLink(id: string): string | undefined;
 }

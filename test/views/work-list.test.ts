@@ -29,6 +29,9 @@ async function open(made: Harness, layout: Layout = DEFAULT_LAYOUT) {
     density: 'comfortable',
     onBindingChange: () => () => undefined,
     openIssue: () => Promise.resolve(),
+    renderMarkdown: () => () => undefined,
+    openSource: () => Promise.resolve(true),
+    sourceLink: () => undefined,
   };
   const saved: Layout[] = [];
   const el = document.body.appendChild(document.createElement('div'));

@@ -174,18 +174,35 @@ async function main(): Promise<void> {
       'the settings tab renders the declared project settings');
 
     // Binding needs the real vault adapter and parseYaml. A Node script outside the vault stands in for Beans.
-    // It answers `version`, and any GraphQL call with the beans found in the task root, so that the plugin's
-    // state follows real file changes.
+    // It answers `version`, a bean read, a creation, and any other GraphQL call with the beans found in the task root,
+    // so that the plugin's state follows real file changes.
     const fakeBeans = join(sandbox, 'beans');
     writeFileSync(fakeBeans, `#!${process.execPath}
 const fs = require('fs');
 if (process.argv.includes('version')) { console.log('beans 0.4.2 (fake) built now'); process.exit(0); }
-const beans = fs.readdirSync('Task root').filter((name) => name.endsWith('.md')).map((name) => {
+const NL = String.fromCharCode(10);
+const args = process.argv;
+const query = args[args.length - 1];
+const vars = JSON.parse(args[args.indexOf('-v') + 1] || '{}');
+const names = () => fs.readdirSync('Task root').filter((name) => name.endsWith('.md'));
+const read = (name) => {
   const text = fs.readFileSync('Task root/' + name, 'utf8');
   return { id: name.split('--')[0], slug: 'x', path: name, title: /^title: (.*)$/m.exec(text)?.[1] ?? '', status: 'todo', type: 'task', priority: 'normal', tags: [],
-    createdAt: '', updatedAt: '', parentId: null, blockingIds: [], blockedByIds: [], blockedBy: [], children: [] };
-});
-console.log(JSON.stringify({ beans }));
+    createdAt: '', updatedAt: '', parentId: null, blockingIds: [], blockedByIds: [], blockedBy: [], children: [],
+    body: NL + (text.split('---' + NL)[2] ?? '').trimEnd() };
+};
+if (query.includes('createBean')) {
+  const name = 'FX-crtd1--created.md';
+  fs.writeFileSync('Task root/' + name, '---' + NL + 'title: ' + vars.input.title + NL + '---' + NL + (vars.input.body ?? '') + NL);
+  console.log(JSON.stringify({ createBean: read(name) }));
+  process.exit(0);
+}
+if (query.includes('bean(id')) {
+  const name = names().find((one) => one.startsWith(vars.id + '--'));
+  console.log(JSON.stringify({ bean: name ? read(name) : null }));
+  process.exit(0);
+}
+console.log(JSON.stringify({ beans: names().map((name) => { const { body, ...row } = read(name); return row; }) }));
 `);
     chmodSync(fakeBeans, 0o755);
     mkdirSync(join(vault, 'Task root'));
@@ -256,9 +273,44 @@ console.log(JSON.stringify({ beans }));
     await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace button')].find((button) => button.textContent.trim() === ${JSON.stringify(en['list.showAll'])}).click()`);
     await session.waitFor(`${rowIds} === 'FX-aaaaa'`, 'Show all work to bring the rows back');
     check(await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.getState().layout.nav === 'all'`), 'the navigation choice is part of the saved workspace layout');
+    const rowRevision = await session.evaluate(`app.plugins.plugins[${id}].state?.getSnapshot().beans[0]?.revision`);
+    writeFileSync(taskFile, '---\ntitle: Third\n---\nHello **bold** <img src=x onerror="window.xss = 1">\n\n- [ ] first item\n- [ ] second item\n');
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().beans[0]?.revision !== ${JSON.stringify(rowRevision)}`, 'the description change to load');
     await click(`.obsibeans-workspace .row`);
     await session.waitFor(`document.querySelector('.obsibeans-workspace .inspector h2')?.textContent === 'Third'`, 'the inspector to show the selected bean');
     check(true, 'selecting a row shows it in the inspector');
+    await click(`.obsibeans-workspace .row`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .inspector h2')?.textContent === 'Third'`, 'the inspector to show the selected bean');
+
+    // The inspector in the real app: Obsidian renders the description, untrusted content stays inert, and the source note actions resolve by ID.
+    await session.waitFor(`!!document.querySelector('.obsibeans-workspace .rendered strong')`, 'the description to render');
+    check(await session.evaluate(`(() => {
+      const rendered = document.querySelector('.obsibeans-workspace .rendered');
+      return rendered.querySelector('strong')?.textContent === 'bold' && !rendered.querySelector('[onerror]') && window.xss === undefined;
+    })()`), 'the description renders as Markdown without executing embedded content');
+    check(await session.evaluate(`(() => {
+      const boxes = [...document.querySelectorAll('.obsibeans-workspace .rendered input[type="checkbox"]')];
+      return boxes.length === 2 && boxes.every((box) => box.disabled) && document.querySelectorAll('.obsibeans-workspace .checklist input').length === 2;
+    })()`), 'rendered task checkboxes are read-only and the checklist offers the two items');
+    check(await session.evaluate(`app.plugins.plugins[${id}].sourceLink('FX-aaaaa')?.includes('FX-aaaaa--one') === true`), 'the note link resolves the current file by full ID in the link style of the vault');
+    await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace .inspector button')].find((button) => button.textContent.trim() === ${JSON.stringify(en['action.openSource'])}).click()`);
+    await session.waitFor(`app.workspace.getActiveFile()?.path === 'Task root/FX-aaaaa--one.md'`, 'the source note to open');
+    check(true, 'Open source note opens the bean file in Obsidian');
+    await session.waitFor(`!!app.workspace.activeEditor?.editor`, 'the source note editor to load');
+    await delay(500);
+    await session.evaluate(`(app.workspace.getLeavesOfType('markdown').forEach((leaf) => leaf.detach()), app.workspace.setActiveLeaf(app.workspace.getLeavesOfType('obsibeans-workspace')[0], { focus: true }), true)`);
+
+    // Creation in the real app: the form creates through the plugin and opens the new bean; the file is removed again to keep the project as the later steps expect.
+    await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace .toolbar button')].find((button) => button.textContent.trim() === ${JSON.stringify(en['create.open'])}).click()`);
+    await session.waitFor(`document.activeElement?.id === 'create-title'`, 'the creation form to open focused');
+    await session.evaluate(`(() => { const input = document.querySelector('#create-title'); input.value = 'Brand new native'; input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+    await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace .create button')].find((button) => button.textContent.trim() === ${JSON.stringify(en['create.submit'])}).click()`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .inspector h2')?.textContent === 'Brand new native'`, 'the new bean to open in the inspector');
+    check(existsSync(join(vault, 'Task root', 'FX-crtd1--created.md')), 'creating a bean writes it through Beans and opens it in the inspector');
+    unlinkSync(join(vault, 'Task root', 'FX-crtd1--created.md'));
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().beans.length === 1`, 'the created bean to leave the project');
+    await click(`.obsibeans-workspace .row`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .inspector h2')?.textContent === 'Third'`, 'the inspector to show the first bean again');
     await screenshot('workspace-wide');
     // Only theme variables colour the workspace, so flipping the body class shows the light theme.
     await session.evaluate(`document.body.classList.replace('theme-dark', 'theme-light')`);

@@ -46,7 +46,7 @@
   {#if !followed.state || !followed.snapshot}
     <p class="unbound" role="status">{followed.bindingText} {t('workspace.hint')}</p>
   {:else}
-    <Inspector snapshot={followed.snapshot} id={shown} onOpen={openLink} onBack={trail.length > 0 ? goBack : undefined} />
+    <Inspector {host} project={followed.state} snapshot={followed.snapshot} id={shown} onOpen={openLink} onBack={trail.length > 0 ? goBack : undefined} />
     <StatusBar project={followed.state} snapshot={followed.snapshot} />
   {/if}
 </section>

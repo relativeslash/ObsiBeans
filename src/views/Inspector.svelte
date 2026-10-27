@@ -1,9 +1,15 @@
 <script lang="ts">
   import type { Snapshot } from '../state/model.ts';
   import { relationsOf, type Related } from '../state/navigation.ts';
+  import type { WorkspaceState } from '../state/workspace-state.ts';
+  import Description from './Description.svelte';
+  import Fields from './Fields.svelte';
+  import type { WorkspaceHost } from './host.ts';
   import { t, type MessageKey } from './i18n.ts';
 
   interface Props {
+    host: WorkspaceHost;
+    project: WorkspaceState;
     snapshot: Snapshot;
     /** The bean to show. */
     id: string | null;
@@ -13,10 +19,16 @@
     /** Present when the bean can still be opened in its own tab. */
     onOpenTab?: (() => void) | undefined;
   }
-  let { snapshot, id, onOpen, onBack, onOpenTab }: Props = $props();
+  let { host, project, snapshot, id, onOpen, onBack, onOpenTab }: Props = $props();
+
+  let fields: Fields | undefined = $state();
+  let description: Description | undefined = $state();
+  /** The outcome of the last action (copy, open): a status line, empty when there is nothing to say. */
+  let note = $state('');
 
   const bean = $derived(snapshot.beans.find((one) => one.id === id));
   const relations = $derived(id === null ? undefined : relationsOf(snapshot.beans, id));
+  const orphan = $derived(snapshot.drafts.find((entry) => entry.draft.kind === 'description' && entry.draft.key === id)?.draft);
   const sections = $derived(
     relations
       ? ([
@@ -27,32 +39,83 @@
         ] as const satisfies readonly (readonly [MessageKey, readonly Related[]])[])
       : [],
   );
+
+  async function copy(text: string | undefined, done: string): Promise<void> {
+    if (text === undefined) {
+      note = t('source.missing');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      note = done;
+    } catch {
+      note = t('copy.failed');
+    }
+  }
+
+  async function openSource(): Promise<void> {
+    note = (await host.openSource(id ?? '')) ? '' : t('source.missing');
+  }
+
+  const isText = (target: HTMLElement): boolean => target.matches('input:not([type="checkbox"]), select, textarea') || target.isContentEditable;
+
+  /** The TUI's detail keys that this view supports: `s`, `t`, `P` pick a field, `e` edits the description, `y` copies the ID. */
+  function onKey(event: KeyboardEvent): void {
+    if (!bean || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || isText(event.target as HTMLElement)) return;
+    const handlers: Record<string, () => unknown> = {
+      s: () => fields?.focus('status'),
+      t: () => fields?.focus('type'),
+      P: () => fields?.focus('priority'),
+      e: () => description?.edit(),
+      y: () => copy(bean.id, t('copy.done', { count: 1 })),
+    };
+    const handler = handlers[event.key];
+    if (!handler) return;
+    event.preventDefault();
+    void handler();
+  }
+
+  const when = (iso: string): string => iso.replace('T', ' ').replace(/:\d\dZ$/, ' UTC');
 </script>
 
-<article class="inspector" aria-label={t('inspector.label')}>
-  {#if onBack || onOpenTab}
+<!-- Shortcuts bubble from the controls; each one also has a visible control. -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<article class="inspector" aria-label={t('inspector.label')} onkeydown={onKey}>
+  {#if onBack || onOpenTab || bean}
     <div class="actions">
       {#if onBack}<button type="button" onclick={onBack}>{t('action.back')}</button>{/if}
       {#if onOpenTab}<button type="button" onclick={onOpenTab}>{t('action.openTab')}</button>{/if}
+      {#if bean}
+        <button type="button" onclick={() => void openSource()}>{t('action.openSource')}</button>
+        <button type="button" onclick={() => void copy(bean.id, t('copy.done', { count: 1 }))}>{t('copy.current')}</button>
+        <button type="button" onclick={() => void copy(host.sourceLink(bean.id), t('copy.linkDone'))}>{t('action.copyLink')}</button>
+      {/if}
     </div>
+    <p class="note" role="status">{note}</p>
   {/if}
   {#if id === null}
     <p class="empty">{t('inspector.none')}</p>
   {:else if !bean}
     <p class="empty" role="status">{snapshot.status === 'loading' ? t('list.loading') : t('inspector.gone', { id })}</p>
+    {#if orphan}
+      <p class="empty">{t('inspector.orphanedDraft')}</p>
+      <textarea readonly rows="8" aria-label={t('description.label')} value={orphan.text}></textarea>
+      <div class="actions">
+        <button type="button" onclick={() => void copy(orphan.text, t('copy.done', { count: 1 }))}>{t('action.copyText')}</button>
+        <button type="button" onclick={() => { project.discardDraft('description', orphan.key); }}>{t('description.discard')}</button>
+      </div>
+    {/if}
   {:else}
     <h2>{bean.title}</h2>
     <p class="id">{bean.id}</p>
-    <ul class="facts" aria-label={t('inspector.fields')}>
-      <li>{t('inspector.status', { value: bean.status })}</li>
-      <li>{t('inspector.type', { value: bean.type })}</li>
-      <li>{t('inspector.priority', { value: bean.priority })}</li>
-    </ul>
-    {#if bean.tags.length > 0}
-      <ul class="tags" aria-label={t('inspector.tags')}>
-        {#each bean.tags as tag, index (index)}<li>{tag}</li>{/each}
-      </ul>
+    <p class="times"><time datetime={bean.createdAt}>{t('inspector.created', { time: when(bean.createdAt) })}</time> · <time datetime={bean.updatedAt}>{t('inspector.updated', { time: when(bean.updatedAt) })}</time></p>
+    {#if bean.problems.length > 0}
+      <p class="empty" role="status">{t('inspector.locked', { problems: bean.problems.join(', ') })}</p>
     {/if}
+    {#key bean.id}
+      <Fields bind:this={fields} {project} {snapshot} {bean} />
+      <Description bind:this={description} {host} {project} {snapshot} {bean} />
+    {/key}
     {#each sections as [name, items] (name)}
       <section>
         <h3>{t(name)}</h3>
@@ -80,12 +143,13 @@
 
 <style>
   .inspector { padding: var(--size-4-4); overflow-y: auto; height: 100%; min-width: 0; }
-  .actions { display: flex; gap: var(--size-4-2); margin-bottom: var(--size-4-3); }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--size-4-2); margin-bottom: var(--size-4-2); }
   h2 { margin: 0 0 var(--size-4-1); }
   h3 { margin: var(--size-4-4) 0 var(--size-4-1); font-size: var(--font-ui-small); text-transform: uppercase; color: var(--text-muted); }
   ul { margin: 0; padding: 0; list-style: none; }
-  .facts, .tags { display: flex; flex-wrap: wrap; gap: var(--size-4-2); margin-block: var(--size-4-2); }
-  .facts li, .tags li { padding: 0 var(--size-4-2); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); font-size: var(--font-ui-small); }
+  textarea { width: 100%; font-family: var(--font-monospace); }
+  .times, .note { margin: 0 0 var(--size-4-2); color: var(--text-muted); font-size: var(--font-ui-smaller); }
+  .note:empty { display: none; }
   .id { font-family: var(--font-monospace); font-size: var(--font-ui-smaller); color: var(--text-muted); }
   .empty { color: var(--text-muted); }
   .link { height: auto; padding: var(--size-4-1) var(--size-4-2); background: transparent; box-shadow: none; color: var(--text-accent); text-align: start; }

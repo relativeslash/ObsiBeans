@@ -1,7 +1,7 @@
-import { FileSystemAdapter, ItemView, parseYaml, Plugin } from 'obsidian';
+import { Component, FileSystemAdapter, ItemView, MarkdownRenderer, parseYaml, Plugin, type TFile } from 'obsidian';
 import type { BeansContext } from '../adapter/beans-graphql.ts';
 import { PRIORITIES, STATUSES, TYPES } from '../adapter/beans-model.ts';
-import { listBeans } from '../adapter/beans-read.ts';
+import { getBean, listBeans } from '../adapter/beans-read.ts';
 import { createBean, mutateBean } from '../adapter/beans-write.ts';
 import { bindProject, configUnchanged, confirmExecutable, type Binding } from '../adapter/binding.ts';
 import { ProcessRunner } from '../adapter/process.ts';
@@ -107,6 +107,7 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
         void this.rebind();
         return { ok: false, error: { kind: 'backend', code: 'cancelled', message: 'The project configuration changed.' } };
       },
+      get: (id) => getBean(context(), id),
       mutate: (id, revision, change) => mutateBean(context(), id, revision, change),
       create: (bean) => createBean(context(), bean),
     };
@@ -116,6 +117,7 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
     const state = new WorkspaceState({
       port: this.portFor(binding),
       vocabulary: { statuses: STATUSES, types: TYPES, priorities: PRIORITIES },
+      defaults: { ...binding.defaults, priority: 'normal' },
       taskRoot: binding.taskRootInVault,
       drafts: this.drafts,
       saveDrafts: (drafts) => {
@@ -190,6 +192,36 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
       await leaf.setViewState({ type: ISSUE_VIEW_TYPE, state: { id }, active: true });
     }
     await workspace.revealLeaf(leaf);
+  }
+
+  /** The bean's Markdown file, found by the path the project last listed for its full ID. */
+  private sourceFile(id: string): TFile | null {
+    const bean = this.state?.getSnapshot().beans.find((one) => one.id === id);
+    const root = this.binding?.ok ? this.binding.value.taskRootInVault : undefined;
+    return bean === undefined || root === undefined ? null : this.app.vault.getFileByPath(root === '' ? bean.path : `${root}/${bean.path}`);
+  }
+
+  async openSource(id: string): Promise<boolean> {
+    const file = this.sourceFile(id);
+    if (file) await this.app.workspace.getLeaf('tab').openFile(file);
+    return file !== null;
+  }
+
+  sourceLink(id: string): string | undefined {
+    const file = this.sourceFile(id);
+    return file ? this.app.fileManager.generateMarkdownLink(file, '') : undefined;
+  }
+
+  renderMarkdown(markdown: string, el: HTMLElement, id: string): () => void {
+    const component = new Component();
+    component.load();
+    const readOnly = (): void => {
+      for (const box of el.querySelectorAll('input[type="checkbox"]')) (box as HTMLInputElement).disabled = true;
+    };
+    MarkdownRenderer.render(this.app, markdown, el, this.sourceFile(id)?.path ?? '', component).then(readOnly, () => {
+      el.textContent = markdown;
+    });
+    return () => { component.unload(); };
   }
 
   /** Reveals the existing workspace tab, or opens one in a new tab. */

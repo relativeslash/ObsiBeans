@@ -4,12 +4,14 @@ import type { Change, NewBean } from '../adapter/beans-write.ts';
 import type { InvalidTaskFile } from '../adapter/task-root.ts';
 
 /** Re-exported so views can describe failures and build edits without importing the adapter. */
-export type { AdapterError, BeanSummary, Change };
+export type { AdapterError, BeanDetail, BeanSummary, Change, NewBean, Outcome };
 
 /** What the state layer needs from the Beans adapter. The plugin shell builds it from the adapter and the bound project. */
 export interface BeansPort {
   /** Lists the whole project. Must settle (not reject) and stop early when `signal` aborts. */
   list(signal: AbortSignal): Promise<Outcome<ProjectRead>>;
+  /** One bean with its description; `null` when it does not exist. */
+  get(id: string): Promise<Outcome<BeanDetail | null>>;
   mutate(id: string, revision: string, change: Change): Promise<Outcome<BeanDetail>>;
   create(bean: NewBean): Promise<Outcome<BeanDetail>>;
 }
@@ -19,6 +21,13 @@ export interface Vocabulary {
   readonly statuses: readonly string[];
   readonly types: readonly string[];
   readonly priorities: readonly string[];
+}
+
+/** What a new bean gets when a form leaves a field open: the project's configured defaults, and `normal` priority. */
+export interface Defaults {
+  readonly status: string;
+  readonly type: string;
+  readonly priority: string;
 }
 
 /** The filter fields shared by every representation. Empty lists and an empty search mean "any". */
