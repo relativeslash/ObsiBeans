@@ -2,7 +2,7 @@
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ViewResult } from '../../src/state/saved-views.ts';
-import type { Density, WorkspaceHost } from '../../src/views/host.ts';
+import type { Density, RelatedNote, WorkspaceHost } from '../../src/views/host.ts';
 import { en } from '../../src/views/messages.en.ts';
 import { parseLayout } from '../../src/views/layout.ts';
 import { ISSUE_VIEW_TYPE, IssueView, SIDEBAR_VIEW_TYPE, SidebarView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../../src/views/workspace-view.ts';
@@ -48,6 +48,14 @@ class FakeHost implements WorkspaceHost {
 
   sourceLink(id: string): string {
     return `[[${id}]]`;
+  }
+
+  relatedNotes(): readonly RelatedNote[] {
+    return [];
+  }
+
+  openNote(): Promise<boolean> {
+    return Promise.resolve(true);
   }
 
   change(patch: Partial<Pick<FakeHost, 'state' | 'bindingText' | 'density'>>): void {
@@ -274,6 +282,7 @@ describe('inspector and related-item navigation', () => {
       [en['inspector.children'], `${en['inspector.children']} ${en['inspector.noneRelated']} ${en['children.new']}`],
       [en['inspector.blockedBy'], `${en['inspector.blockedBy']} ${en['inspector.noneRelated']} ${en['links.addBlockedBy']}`],
       [en['inspector.blocks'], `${en['inspector.blocks']} ${B} Title ${B} ${en['links.removeShort']} ${en['links.addBlocks']}`],
+      [en['notes.heading'], `${en['notes.heading']} ${en['notes.none']}`],
     ]);
   });
 

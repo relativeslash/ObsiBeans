@@ -5,6 +5,31 @@ import type { WorkspaceState } from '../state/workspace-state.ts';
 export type Density = 'comfortable' | 'compact';
 export const DENSITIES: readonly Density[] = ['comfortable', 'compact'];
 
+/** A note Obsidian reports as linked with a bean's file: it links to the bean (`backlink`) or the bean links to it (`link`). */
+export interface RelatedNote {
+  readonly kind: 'backlink' | 'link';
+  /** Vault-relative path. */
+  readonly path: string;
+}
+
+/** `after` keeps the selected text and writes the link behind it; `replace` writes the link over it. */
+export type InsertMode = 'after' | 'replace';
+/** `changed`: the note no longer has the selection where it was; `gone`: its editor or file is no longer open. Nothing was written in either case. */
+export type InsertOutcome = 'inserted' | 'changed' | 'gone';
+
+/** The place in a note a command started from. The shell owns the editor; a target only writes where the note still matches what was captured. */
+export interface NoteTarget {
+  readonly notePath: string;
+  /** A link to the note, in the user's link style, for a bean description. */
+  readonly noteLink: string;
+  /** The selected text; empty when only a cursor was captured. */
+  readonly text: string;
+  /** The link to a bean, in the user's link style. Works before Obsidian has indexed the bean's file. */
+  link(id: string, title: string): string;
+  /** Writes the link to the bean at the captured place, after checking that the place is unchanged. Never overwrites text it did not capture. */
+  insert(id: string, title: string, mode: InsertMode): InsertOutcome;
+}
+
 /** What the views need from the plugin shell. Views never import the shell. */
 export interface WorkspaceHost {
   /** The shared state of the bound project; undefined while unbound or checking. Replaced on every rebind. */
@@ -30,4 +55,8 @@ export interface WorkspaceHost {
   openSource(id: string): Promise<boolean>;
   /** A link to the bean's file in the user's link style, or undefined when the file cannot be found. */
   sourceLink(id: string): string | undefined;
+  /** The notes Obsidian resolves as linked with the bean's file, sorted by path. Re-read after `onBindingChange` fires. */
+  relatedNotes(id: string): readonly RelatedNote[];
+  /** Opens a note by vault path. False when it no longer exists. */
+  openNote(path: string): Promise<boolean>;
 }

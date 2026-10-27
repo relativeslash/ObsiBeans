@@ -1,6 +1,6 @@
 ---
 created_at: 2026-10-26T01:16:31Z
-updated_at: 2026-10-26T09:24:28Z
+updated_at: 2026-10-27T19:18:55Z
 ---
 
 # ObsiBeans native workspace proposal
@@ -261,6 +261,18 @@ Unsaved description edits and unsaved creation forms are recoverable drafts stor
 ### Board swimlanes
 
 Swimlanes are a per-view board option. With swimlanes set to `parent`, the board groups cards into one row per direct parent, plus a "No parent" lane. Lanes use the same deterministic order as the list. A lane header is context, not a selectable bean or bulk target. Dragging a card between columns changes its status. Dragging between lanes is not allowed in v1, and a parent change goes through the parent picker. This keeps drag from acting as a hidden relationship edit.
+
+### Note links and selected-text conversion
+
+Decided while building [[docs/Private/Tasks/OB-rmmo--build-note-links-backlinks-and-selected-text-conve.md|OB-rmmo]]. Product decisions, verified in a native vault.
+
+- Related notes are the notes Obsidian resolves as linking to the bean's file (backlinks) and the notes the bean's file links to. The plugin never parses note text for links.
+- Both commands exist only in a note editor with a bound project; conversion also needs a non-empty selection. Each has a palette entry and an editor context-menu item.
+- A command captures the selection with 40 characters of surrounding text. The note is written only if that text is still where it was or occurs at exactly one other place; otherwise nothing is written and the link is offered for copying and retry.
+- Insert bean link writes the link after the cursor or selection and never replaces text. Convert selection shows a preview (title, description, defaults, note choice) and creates nothing until confirmed. The note choice is `Add a link after the selected text` (default), `Leave the note unchanged`, or `Replace the selected text with the link`; only the last removes text from the note, and the selected text is already in the bean description.
+- The title is the first non-empty line of the selection without list, heading, quote or task markers and link brackets, up to 80 characters. The description is the selection followed by `Source: <link to the note>`; a one-line selection equal to the title is not repeated. Beans receives them as GraphQL variables, never as a command line.
+- The bean is created once. If the note write is then refused, the dialog keeps the bean, shows the link and retries only the note write. Closing the dialog while a creation is pending still performs the note write afterwards, but its failure is then not shown.
+- Limitation: editors that are not a workspace tab (canvas cards, embedded editors) cannot be written to; they report that the note is no longer open.
 
 ### Module boundaries
 

@@ -8,6 +8,7 @@
   import type { WorkspaceHost } from './host.ts';
   import { t } from './i18n.ts';
   import Links from './Links.svelte';
+  import Notes from './Notes.svelte';
   import Parent from './Parent.svelte';
 
   interface Props {
@@ -144,6 +145,7 @@
       {/if}
     </section>
     {#key bean.id}<Links bind:this={links} {project} {snapshot} {bean} {onOpen} />{/key}
+    {#key bean.id}<Notes {host} {bean} />{/key}
   {/if}
 </article>
 

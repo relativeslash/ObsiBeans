@@ -393,6 +393,88 @@ console.log(JSON.stringify({ beans: names().map((name) => { const { body, ...row
     await session.evaluate(`${buttonByText('.obsibeans-workspace nav', en['nav.all'])}.click()`);
     await session.waitFor(`document.querySelectorAll('.obsibeans-workspace button.row').length > 0`, 'All work to list the beans again');
 
+    // Note links: Obsidian's own link resolution, link-aware moves, and the two editor commands in a real editor.
+    // Without this, renaming a linked file waits for the user to answer an "Update links?" prompt.
+    await session.evaluate(`(app.vault.setConfig('alwaysUpdateLinks', true), true)`);
+    await session.evaluate(`(async () => {
+      await app.vault.createFolder('Notes');
+      await app.vault.create('Notes/Shopping.md', 'Intro\\n\\nBuy milk and eggs today\\n\\nOutro');
+      await app.vault.create('Notes/Plan.md', 'Plan for [[FX-aaaaa--one]] soon');
+    })()`);
+    const related = `JSON.stringify(app.plugins.plugins[${id}].relatedNotes('FX-aaaaa'))`;
+    await session.waitFor(`${related}.includes('Notes/Plan.md')`, 'Obsidian to resolve the note link');
+    check(await session.evaluate(`${related} === JSON.stringify([{ kind: 'backlink', path: 'Notes/Plan.md' }])`), 'the related notes come from Obsidian link resolution');
+    await click(`.obsibeans-workspace .row[data-id="FX-aaaaa"]`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .inspector section[aria-labelledby^="notes-"]')?.textContent.includes('Notes/Plan') === true`, 'the inspector to list the linking note');
+    check(true, 'the inspector lists a note that links to the bean');
+    await screenshot('inspector-notes');
+    await session.evaluate(`app.fileManager.renameFile(app.vault.getFileByPath('Notes/Plan.md'), 'Notes/Plan moved.md')`);
+    await session.waitFor(`${related}.includes('Notes/Plan moved.md') && !${related}.includes('Notes/Plan.md')`, 'the moved note to be followed');
+    check(await session.evaluate(`app.vault.getFileByPath('Notes/Plan moved.md') !== null && document.querySelector('.obsibeans-workspace .inspector section[aria-labelledby^="notes-"]')?.textContent.includes('Notes/Plan moved') === true`), 'a link-aware note move keeps the related note correct');
+    await session.evaluate(`app.fileManager.renameFile(app.vault.getFileByPath('Task root/FX-aaaaa--one.md'), 'Task root/FX-aaaaa--moved.md')`);
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().beans.find((bean) => bean.id === 'FX-aaaaa')?.path === 'FX-aaaaa--moved.md' && ${related}.includes('Notes/Plan moved.md')`, 'the moved bean file to keep its related notes');
+    check(await session.evaluate(`(await app.vault.read(app.vault.getFileByPath('Notes/Plan moved.md'))).includes('FX-aaaaa--moved')`), 'a link-aware bean move rewrites the link and keeps the full bean ID');
+    await session.evaluate(`app.fileManager.renameFile(app.vault.getFileByPath('Task root/FX-aaaaa--moved.md'), 'Task root/FX-aaaaa--one.md')`);
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().beans.find((bean) => bean.id === 'FX-aaaaa')?.path === 'FX-aaaaa--one.md'`, 'the bean file to return');
+    await session.waitFor(`${related}.includes('Notes/Plan moved.md')`, 'the related note after the bean file returned');
+
+    const modal = (): string => `document.querySelector('.modal-container .modal')`;
+    const editorOf = `app.workspace.getLeavesOfType('markdown').find((leaf) => leaf.view.file?.path === 'Notes/Shopping.md').view.editor`;
+    await session.evaluate(`(async () => { const leaf = app.workspace.getLeaf('tab'); await leaf.openFile(app.vault.getFileByPath('Notes/Shopping.md'), { active: true }); app.workspace.setActiveLeaf(leaf, { focus: true }); })()`);
+    await session.waitFor(`!!app.workspace.activeEditor?.editor`, 'the note editor to be active');
+    const select = (text: string): string => `(() => { const editor = ${editorOf}; const value = editor.getValue(); const from = editor.offsetToPos(value.indexOf(${JSON.stringify(text)})); editor.setSelection(from, editor.offsetToPos(value.indexOf(${JSON.stringify(text)}) + ${String(text.length)})); })()`;
+    const shopping = (): string => `${editorOf}.getValue()`;
+    const dialogButton = (label: string): string => `[...${modal()}.querySelectorAll('button')].find((button) => button.textContent.trim() === ${JSON.stringify(label)})`;
+
+    // Insert bean link: the picker opens from the command, and cancelling writes nothing.
+    await session.evaluate(select('milk and eggs'));
+    await session.evaluate(`document.querySelector('.workspace-leaf.mod-active .cm-content').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 300, clientY: 200 }))`);
+    await session.waitFor(`document.querySelector('.menu') !== null`, 'the editor context menu to open');
+    check(await session.evaluate(`(() => {
+      const titles = [...document.querySelectorAll('.menu .menu-item-title')].map((title) => title.textContent);
+      return titles.includes(${JSON.stringify(en['command.insertLink'])}) && titles.includes(${JSON.stringify(en['command.convertSelection'])});
+    })()`), 'the editor context menu offers both note actions for a selection');
+    const original = await session.evaluate(`${editorOf}.getValue()`) as string;
+    await session.evaluate(`[...document.querySelectorAll('.menu .menu-item')].find((item) => item.textContent.includes(${JSON.stringify(en['command.insertLink'])})).click()`);
+    await session.waitFor(`${modal()}?.textContent.includes(${JSON.stringify(en['link.title'])}) === true`, 'the link picker to open from the context menu');
+    await session.evaluate(`${dialogButton(en['picker.cancel'])}.click()`);
+    await session.waitFor(`!${modal()}`, 'the picker to close');
+    check(await session.evaluate(`${shopping()} === ${JSON.stringify(original)}`), 'cancelling the link picker leaves the note as it was');
+    await session.evaluate(`app.commands.executeCommandById(${id} + ':insert-link')`);
+    await session.waitFor(`!!${modal()}?.querySelector('li button')`, 'the link picker to list beans');
+    await session.evaluate(`[...${modal()}.querySelectorAll('li button')].find((button) => button.textContent.includes('FX-aaaaa')).click()`);
+    await session.waitFor(`!${modal()}`, 'the picker to close after choosing');
+    check(await session.evaluate(`${shopping()} === ${JSON.stringify(original.replace('milk and eggs', 'milk and eggs [[FX-aaaaa--one|Third]]'))}`), 'Insert bean link writes the link after the selection and keeps the selected text');
+
+    // Convert selection: a preview first, a concurrent edit blocks only the note write, and retrying never creates a second bean.
+    await session.evaluate(`${editorOf}.setValue(${JSON.stringify(original)})`);
+    await session.evaluate(select('milk and eggs'));
+    check(await session.evaluate(`app.commands.executeCommandById(${id} + ':convert-selection')`) !== false, 'the convert command is offered with a selection');
+    await session.waitFor(`document.querySelector('#convert-title')?.value === 'milk and eggs'`, 'the conversion preview to open');
+    check(await session.evaluate(`document.querySelector('#convert-body').value.includes('Source: [[Shopping]]') && document.querySelector('input[name="convert-insert"]:checked').value === 'after'`), 'the preview shows the selected text, the source link and the default of keeping the text');
+    await screenshot('convert-dialog');
+    await session.evaluate(`${dialogButton(en['create.cancel'])}.click()`);
+    await session.waitFor(`!${modal()}`, 'the preview to close');
+    check(!existsSync(join(vault, 'Task root', 'FX-crtd1--created.md')), 'cancelling the conversion creates nothing');
+    await session.evaluate(select('milk and eggs'));
+    await session.evaluate(`app.commands.executeCommandById(${id} + ':convert-selection')`);
+    await session.waitFor(`document.querySelector('#convert-title')?.value === 'milk and eggs'`, 'the conversion preview to open again');
+    await session.evaluate(`(() => { const editor = ${editorOf}; const value = editor.getValue(); const at = value.indexOf('milk'); editor.replaceRange('oat', editor.offsetToPos(at), editor.offsetToPos(at + 4)); })()`);
+    await session.evaluate(`${dialogButton(en['convert.submit'])}.click()`);
+    await session.waitFor(`${modal()}?.textContent.includes(${JSON.stringify(en['note.changed'])}) === true`, 'the note write to be refused');
+    await screenshot('convert-note-changed');
+    check(existsSync(join(vault, 'Task root', 'FX-crtd1--created.md')) && readFileSync(join(vault, 'Task root', 'FX-crtd1--created.md'), 'utf8').includes('Source: [[Shopping]]'), 'the bean is created with a link to the source note although the note write was refused');
+    check(await session.evaluate(`${shopping()} === ${JSON.stringify(original.replace('milk', 'oat'))} && document.querySelector('#insert-link')?.value.includes('FX-crtd1--created') === true`), 'a concurrent edit is not overwritten, and the link stays available');
+    await session.evaluate(`(() => { const editor = ${editorOf}; const value = editor.getValue(); const at = value.indexOf('oat'); editor.replaceRange('milk', editor.offsetToPos(at), editor.offsetToPos(at + 3)); })()`);
+    await session.evaluate(`${dialogButton(en['note.retry'])}.click()`);
+    await session.waitFor(`${modal()}?.textContent.includes(${JSON.stringify(en['convert.createdLinked'].replace('{id}', 'FX-crtd1'))}) === true`, 'the retried note write to succeed');
+    check(await session.evaluate(`${shopping()}.includes('Buy milk and eggs [[FX-crtd1--created|milk and eggs]] today')`), 'retrying writes the link once the text is back, keeping the selected text');
+    await session.evaluate(`${dialogButton(en['note.close'])}.click()`);
+    await session.waitFor(`!${modal()}`, 'the dialog to close');
+    unlinkSync(join(vault, 'Task root', 'FX-crtd1--created.md'));
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().beans.length === 2`, 'the converted bean to leave the project');
+    await session.evaluate(`(app.workspace.getLeavesOfType('markdown').forEach((leaf) => leaf.detach()), app.workspace.setActiveLeaf(app.workspace.getLeavesOfType('obsibeans-workspace')[0], { focus: true }), true)`);
+
     // Hierarchy: an epic with a child, opened with the keyboard in the real app; the two files are removed again afterwards.
     writeFileSync(join(vault, 'Task root', 'FX-hier1--epic.md'), '---\ntitle: Native epic\ntype: epic\n---\n');
     writeFileSync(join(vault, 'Task root', 'FX-hier2--child.md'), '---\ntitle: Native child\nparent: FX-hier1\n---\n');
