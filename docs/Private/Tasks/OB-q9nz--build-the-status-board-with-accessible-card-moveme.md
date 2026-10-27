@@ -1,13 +1,13 @@
 ---
 # OB-q9nz
 title: Build the status board with accessible card movement
-status: in-progress
+status: completed
 type: feature
 priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-27T09:46:27Z
+updated_at: 2026-10-27T12:07:56Z
 parent: OB-lb80
 blocked_by:
     - OB-7a9z
@@ -48,4 +48,12 @@ Provide board parity evidence, including swimlane behavior. Update affected docu
 - Implemented `src/state/board.ts` (columns, filtered counts, lanes), `src/views/Board.svelte`, and a List/Board switch plus "Group by parent" in the list controls; `view` and `swimlanes` are saved in the workspace layout. The board renders inside `WorkList`, so filters, selection, bulk bar, banners and the mutation path are shared.
 - Fixed a defect found on the way: any layout change replaced `current` and re-applied the navigation filters, so switching view would have reset the user's filters. `Workspace.svelte` now reads the navigation entry through a derived value.
 - Evidence: `yarn verify` passes; tests in `test/state/board.test.ts` and `test/views/board.test.ts` cover status transitions, drag and cancelled drag, the Move select, pending/failure/conflict, same-column drop, cross-lane rejection and view switching.
-- Still open before completion: verify light/dark and narrow layouts in a real Obsidian (needs a desktop session), then append the Summary of Changes.
+
+## Summary of Changes
+
+- Added `src/state/board.ts` (five workflow-ordered status columns, filtered per-column counts, per-parent lanes plus No parent), `src/views/Board.svelte`, and a List/Board switch with a Group by parent option in `ListControls`. `view` and `swimlanes` are saved in the workspace layout. The board renders inside `WorkList`, so filters, selection, bulk bar, banners and the field mutation are shared with the list.
+- Moving: drag between columns or the per-card Move picker, both through `WorkspaceState.mutate`. A card stays put until Beans confirms; failure and conflict show the message (with Apply my change again) and restore the picker. Same-column drops, cancelled drags and cross-lane drops write nothing, so a parent is never changed by drag. Lane headers have no checkbox or action and the board shows no context rows, so neither can become a bulk target.
+- Fixed a defect found on the way: layout changes re-applied the navigation filters, which would have reset filters on every view switch.
+- Evidence: `yarn verify` passes (new `test/state/board.test.ts`, `test/views/board.test.ts`). `yarn test:native` (Obsidian 1.14.5, Linux, isolated instance) passes with a new board section: Board switch, five columns, dark/light/narrow screenshots reviewed (narrow board scrolls horizontally inside the work pane), switch back to list.
+- Limitations: native drag-and-drop with a real pointer and a real move through Beans were not exercised; drag is covered by synthetic events in jsdom, the move mutation by the scripted port. The smoke test's fake Beans does not implement updates. Hierarchy view and saved-view `representation` are other beans; `Layout.view` accepts only list and board until OB-uqrv adds hierarchy.
+- Follow-up: none required.

@@ -335,6 +335,28 @@ console.log(JSON.stringify({ beans: names().map((name) => { const { body, ...row
     await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.contentEl.style.width = ''`);
     await session.waitFor(`!document.querySelector('.narrow')`, 'the pane to expand again');
 
+    // Board: switches in place, shows every bean as a card, and stays usable in dark, light and narrow panes.
+    const buttonByText = (scope: string, label: string): string => `[...document.querySelectorAll(${JSON.stringify(scope)} + ' button')].find((button) => button.textContent.trim() === ${JSON.stringify(label)})`;
+    await session.evaluate(`${buttonByText('.obsibeans-workspace .controls', en['view.board'])}.click()`);
+    await session.waitFor(`document.querySelectorAll('.obsibeans-workspace .board .card').length === document.querySelectorAll('.obsibeans-workspace .board select').length && document.querySelectorAll('.obsibeans-workspace .board .card').length > 0`, 'the board to render');
+    check(await session.evaluate(`document.querySelectorAll('.obsibeans-workspace .board .head').length === 5 && !document.querySelector('.obsibeans-workspace ul.rows')`), 'the Board switch replaces the list with five status columns');
+    for (const theme of ['dark', 'light']) {
+      await session.evaluate(`(document.body.classList.remove('theme-dark', 'theme-light'), document.body.classList.add('theme-${theme}'), true)`);
+      await screenshot(`board-${theme}`);
+    }
+    await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.contentEl.style.width = '500px'`);
+    await session.waitFor(`!!document.querySelector('.obsibeans-workspace.narrow')`, 'the board pane to collapse');
+    // A selected bean shows its details full-pane while narrow; Back returns to the work view.
+    await session.evaluate(`${buttonByText('.obsibeans-workspace .pane-detail', en['action.back'])}?.click()`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .pane-list')?.hidden === false`, 'the work view to show in the narrow pane');
+    check(await session.evaluate(`(() => { const list = document.querySelector('.obsibeans-workspace .list'); return !!list && list.getBoundingClientRect().width > 0 && getComputedStyle(list).overflowX !== 'visible' && document.querySelectorAll('.obsibeans-workspace .board .head').length === 5; })()`), 'a narrow board keeps five columns and scrolls inside the work pane');
+    await screenshot('board-narrow');
+    await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.contentEl.style.width = ''`);
+    await session.waitFor(`!document.querySelector('.narrow')`, 'the pane to expand after the board check');
+    await session.evaluate(`${buttonByText('.obsibeans-workspace .controls', en['view.list'])}.click()`);
+    await session.waitFor(`!!document.querySelector('.obsibeans-workspace ul.rows') && !document.querySelector('.obsibeans-workspace .board')`, 'the list to return');
+    check(true, 'switching back shows the list again');
+
     // Error state: with Beans gone, a refresh keeps the rows under a stale banner, and Refresh in the banner recovers.
     renameSync(fakeBeans, `${fakeBeans}.away`);
     await session.evaluate(`[...document.querySelectorAll('.obsibeans-workspace .toolbar button')].find((button) => button.textContent.trim() === ${JSON.stringify(en['action.refresh'])}).click()`);
