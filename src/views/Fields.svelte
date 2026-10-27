@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { BeanSummary, Change, Snapshot } from '../state/model.ts';
   import type { WorkspaceState } from '../state/workspace-state.ts';
+  import { typeBlockers } from '../state/relations.ts';
   import { parseTags } from './create-form.ts';
   import { t } from './i18n.ts';
   import SaveFeedback from './SaveFeedback.svelte';
@@ -29,6 +30,8 @@
   const locked = $derived(bean.problems.length > 0 || save?.kind === 'pending' || save?.kind === 'uncertain');
   const title = $derived(titleEdit ?? bean.title);
   const tags = $derived(tagsEdit ?? bean.tags.join(' '));
+  /** Types the current parent or children would not accept (BC-30); Beans checks none of this itself. */
+  const blockedTypes = $derived(typeBlockers(snapshot.beans, bean, project.vocabulary.types));
 
   /** A pending save shows the value the user asked for, never as data. */
   function valueOf(field: Pick): string {
@@ -100,9 +103,12 @@
     <div class="field">
       <label for="field-{field}-{bean.id}">{t(`field.${field}`)}</label>
       <select id="field-{field}-{bean.id}" data-field={field} disabled={locked} value={valueOf(field)} onchange={(event) => void pick(event, field)}>
-        {#each project.vocabulary[LISTS[field]] as value (value)}<option {value}>{value}</option>{/each}
+        {#each project.vocabulary[LISTS[field]] as value (value)}<option {value} disabled={field === 'type' && blockedTypes.has(value)}>{value}</option>{/each}
         {#if !project.vocabulary[LISTS[field]].includes(bean[field])}<option value={bean[field]}>{bean[field]}</option>{/if}
       </select>
+      {#if field === 'type'}
+        {#each blockedTypes as [type, reason] (type)}<p class="done">{t('field.typeBlocked', { type, reason })}</p>{/each}
+      {/if}
       {@render feedback(field)}
     </div>
   {/each}

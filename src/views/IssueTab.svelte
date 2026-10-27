@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte';
   import { popTrail, pushTrail } from '../state/navigation.ts';
+  import CreateForm from './CreateForm.svelte';
   import { follow } from './follow.svelte.ts';
   import type { WorkspaceHost } from './host.ts';
   import { t } from './i18n.ts';
@@ -20,6 +21,8 @@
 
   let shown = $state(untrack(() => id));
   let trail = $state<readonly string[]>([]);
+  /** The parent of the child being created in this tab; the form replaces the details until it ends. */
+  let newChildOf = $state<string | undefined>();
 
   function openLink(next: string): void {
     trail = pushTrail(trail, shown);
@@ -46,7 +49,17 @@
   {#if !followed.state || !followed.snapshot}
     <p class="unbound" role="status">{followed.bindingText} {t('workspace.hint')}</p>
   {:else}
-    <Inspector {host} project={followed.state} snapshot={followed.snapshot} id={shown} onOpen={openLink} onBack={trail.length > 0 ? goBack : undefined} />
+    {#if newChildOf !== undefined}
+      <CreateForm
+        project={followed.state}
+        snapshot={followed.snapshot}
+        parentId={newChildOf}
+        onDone={(created) => { newChildOf = undefined; openLink(created); }}
+        onCancel={() => { newChildOf = undefined; }}
+      />
+    {:else}
+      <Inspector {host} project={followed.state} snapshot={followed.snapshot} id={shown} onOpen={openLink} onBack={trail.length > 0 ? goBack : undefined} onNewChild={(parent) => { newChildOf = parent; }} />
+    {/if}
     <StatusBar project={followed.state} snapshot={followed.snapshot} />
   {/if}
 </section>

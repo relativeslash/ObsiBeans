@@ -262,10 +262,10 @@ describe('inspector and related-item navigation', () => {
     expect(selected(ui.el)).toBe(C);
     const sections = [...ui.el.querySelectorAll('.inspector section:not(.description)')].map((section) => [section.querySelector('h3')?.textContent, section.textContent.replace(/\s+/g, ' ').trim()]);
     expect(sections).toEqual([
-      [en['inspector.parent'], `${en['inspector.parent']} ${en['inspector.noneRelated']}`],
-      [en['inspector.children'], `${en['inspector.children']} ${en['inspector.noneRelated']}`],
-      [en['inspector.blockedBy'], `${en['inspector.blockedBy']} ${en['inspector.noneRelated']}`],
-      [en['inspector.blocks'], `${en['inspector.blocks']} ${B} Title ${B}`],
+      [en['inspector.parent'], `${en['inspector.parent']} ${en['inspector.noneRelated']} ${en['parent.milestone']}`],
+      [en['inspector.children'], `${en['inspector.children']} ${en['inspector.noneRelated']} ${en['children.new']}`],
+      [en['inspector.blockedBy'], `${en['inspector.blockedBy']} ${en['inspector.noneRelated']} ${en['links.addBlockedBy']}`],
+      [en['inspector.blocks'], `${en['inspector.blocks']} ${B} Title ${B} ${en['links.removeShort']} ${en['links.addBlocks']}`],
     ]);
   });
 

@@ -4,6 +4,7 @@ import type { Change, NewBean } from '../adapter/beans-write.ts';
 import { classify, removeDraft, restoration, upsertDraft } from './drafts.ts';
 import { matchesFilters, orderBeans, type Readiness } from './filters.ts';
 import { Loader } from './loader.ts';
+import { localProblem } from './relations.ts';
 import {
   DEFAULT_FILTERS,
   type BeansPort,
@@ -244,10 +245,14 @@ export class WorkspaceState {
     const bean = this.cache?.byId.get(id);
     if (bean === undefined) return { kind: 'ignored', reason: this.disposed ? 'disposed' : 'unknown-bean' };
     const revision = basis ?? bean.revision;
+    // Beans misses these (BC-30, BC-35), so every caller, single or bulk, is checked here against the loaded data.
+    const problem = localProblem(this.cache?.beans ?? [], id, change, this.options.vocabulary.types);
     const result = await this.write(id, change, () =>
-      revision === null
-        ? Promise.resolve({ ok: false as const, error: { kind: 'preservation' as const, code: 'invalid-bean' as const, detail: 'The bean file cannot be read.' } })
-        : this.options.port.mutate(id, revision, change),
+      problem !== undefined
+        ? Promise.resolve({ ok: false as const, error: { kind: 'validation' as const, code: 'input' as const, message: problem } })
+        : revision === null
+          ? Promise.resolve({ ok: false as const, error: { kind: 'preservation' as const, code: 'invalid-bean' as const, detail: 'The bean file cannot be read.' } })
+          : this.options.port.mutate(id, revision, change),
     );
     if (result.kind === 'failed' && change.kind === 'body') this.keepDraft('description', id, change.body, revision);
     if (result.kind === 'saved' && change.kind === 'body') this.discardDraft('description', id);

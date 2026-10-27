@@ -9,12 +9,14 @@
   interface Props {
     project: WorkspaceState;
     snapshot: Snapshot;
+    /** Starts the form under this parent (the new-child action). Beans validates the chosen type against it. */
+    parentId?: string | undefined;
     /** Called with the new bean's ID once Beans confirmed the creation. */
     onDone: (id: string) => void;
     /** Leaves the form. Creates nothing. */
     onCancel: () => void;
   }
-  let { project, snapshot, onDone, onCancel }: Props = $props();
+  let { project, snapshot, parentId, onDone, onCancel }: Props = $props();
 
   const KEY = `new:${FORM_KEY}`;
   const FIELDS = [
@@ -25,7 +27,7 @@
 
   // An unsaved form from an earlier visit comes back; it is the one creation draft.
   const restored = untrack(() => snapshot.drafts.find((entry) => entry.draft.kind === 'creation' && entry.draft.key === FORM_KEY));
-  let values = $state<FormValues>(restored ? parseForm(restored.draft.text) : { ...EMPTY_FORM });
+  let values = $state<FormValues>({ ...(restored ? parseForm(restored.draft.text) : EMPTY_FORM), ...(untrack(() => parentId) !== undefined && { parent: untrack(() => parentId) ?? '' }) });
   let title: HTMLInputElement | undefined = $state();
 
   const save = $derived(snapshot.saves.get(KEY));
@@ -67,6 +69,12 @@
     <label for="create-title">{t('create.field.title')}</label>
     <input id="create-title" type="text" bind:this={title} bind:value={values.title} onkeydown={onKey} />
   </div>
+  {#if values.parent !== ''}
+    <p class="parent">
+      {t('create.parent', { id: values.parent })}
+      <button type="button" onclick={() => { values.parent = ''; }}>{t('create.parentRemove')}</button>
+    </p>
+  {/if}
   {#if values.expanded}
     <div class="row">
       {#each FIELDS as [field, list] (field)}
@@ -106,5 +114,6 @@
   label { font-size: var(--font-ui-smaller); color: var(--text-muted); }
   textarea { font-family: var(--font-monospace); }
   .buttons { display: flex; flex-wrap: wrap; gap: var(--size-4-2); }
+  .parent { margin: 0 0 var(--size-4-3); color: var(--text-muted); font-size: var(--font-ui-small); }
   .hint { color: var(--text-muted); font-size: var(--font-ui-smaller); }
 </style>

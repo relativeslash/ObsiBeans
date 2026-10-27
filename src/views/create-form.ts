@@ -9,10 +9,12 @@ export interface FormValues {
   /** As typed: words separated by spaces or commas. */
   tags: string;
   body: string;
+  /** Full ID of the parent, or empty. Beans validates it with the type. */
+  parent: string;
   expanded: boolean;
 }
 
-export const EMPTY_FORM: FormValues = { title: '', type: '', status: '', priority: '', tags: '', body: '', expanded: false };
+export const EMPTY_FORM: FormValues = { title: '', type: '', status: '', priority: '', tags: '', body: '', parent: '', expanded: false };
 
 /** The local key of the one creation form: its draft and save state are stored under it. */
 export const FORM_KEY = 'form';
@@ -41,6 +43,7 @@ export function parseForm(text: string): FormValues {
     priority: field('priority'),
     tags: field('tags'),
     body: field('body'),
+    parent: field('parent'),
     expanded: stored.expanded === true,
   };
 }
@@ -55,5 +58,6 @@ export function toNewBean(values: FormValues, draft: boolean): NewBean {
     ...(values.priority !== '' && { priority: values.priority }),
     ...(tags.length > 0 && { tags }),
     ...(values.body.trim() !== '' && { body: values.body }),
+    ...(values.parent !== '' && { parentId: values.parent }),
   };
 }

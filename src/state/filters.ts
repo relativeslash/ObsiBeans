@@ -2,10 +2,10 @@ import type { BeanSummary } from '../adapter/beans-model.ts';
 import type { Filters, Row, Sort, SortKey, Vocabulary } from './model.ts';
 
 /** English is the only locale (project info, LOC-TEXT-005); the system locale is ignored. Case-insensitive, accent-sensitive. */
-const TITLES = new Intl.Collator('en', { sensitivity: 'accent' });
+export const TITLES = new Intl.Collator('en', { sensitivity: 'accent' });
 
 /** Position in a fixed list; a value the list does not know sorts last. */
-const rank = (list: readonly string[], value: string): number => {
+export const rank = (list: readonly string[], value: string): number => {
   const at = list.indexOf(value);
   return at < 0 ? list.length : at;
 };
