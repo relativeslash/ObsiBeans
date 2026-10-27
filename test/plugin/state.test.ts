@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import ObsiBeansPlugin from '../../src/plugin/main.ts';
-import { App, bridge, type Plugin } from '../support/obsidian.ts';
+import { App, bridge, MarkdownRenderer, type Plugin } from '../support/obsidian.ts';
 import { callsOf, makeProject, makeSandbox, script, trust, writeScriptedBeans, type Sandbox, type Step } from '../support/project.ts';
 
 let sandbox: Sandbox;
@@ -193,5 +193,69 @@ describe('draft storage', () => {
     const { plugin } = await boundPlugin([listing(A)], { drafts: 'garbage' });
 
     expect(plugin.state?.getSnapshot().drafts).toEqual([]);
+  });
+});
+
+describe('inspector support in the plugin shell', () => {
+  const file = `Task root/${A}--t.md`;
+
+  it('reads one bean with its description and exposes the project creation defaults', async () => {
+    const { plugin } = await boundPlugin([listing(A), { when: 'bean\\(id', stdout: { bean: { ...row(A), body: '\nHello' } } }]);
+    await expect.poll(() => plugin.state?.getSnapshot().status).toBe('ready');
+
+    expect(plugin.state?.defaults).toEqual({ status: 'todo', type: 'task', priority: 'normal' });
+    expect(await plugin.state?.detail(A)).toMatchObject({ ok: true, value: { id: A, body: '\nHello' } });
+  });
+
+  it('opens the source note found by the listed path, and reports a missing file', async () => {
+    const { app, plugin } = await boundPlugin([listing(A)]);
+    await expect.poll(() => plugin.state?.getSnapshot().status).toBe('ready');
+
+    expect(await plugin.openSource(A)).toBe(false);
+    expect(await plugin.openSource('FX-zzzzz')).toBe(false);
+
+    app.vault.files.add(file);
+    expect(await plugin.openSource(A)).toBe(true);
+    expect(app.workspace.leaves.at(-1)?.opened).toEqual([{ path: file }]);
+  });
+
+  it('builds the note link in the user link style, and none for a missing file or without a project', async () => {
+    const { app, plugin } = await boundPlugin([listing(A)]);
+    await expect.poll(() => plugin.state?.getSnapshot().status).toBe('ready');
+    expect(plugin.sourceLink(A)).toBeUndefined();
+
+    app.vault.files.add(file);
+    expect(plugin.sourceLink(A)).toBe(`[[${file}]]`);
+
+    plugin.state = undefined;
+    expect(plugin.sourceLink(A)).toBeUndefined();
+  });
+
+  it('draws Markdown with Obsidian, makes task checkboxes read-only and releases the renderer', async () => {
+    const { plugin } = await boundPlugin([listing(A)]);
+    await expect.poll(() => plugin.state?.getSnapshot().status).toBe('ready');
+    const el = document.createElement('div');
+
+    const release = plugin.renderMarkdown('- [ ] one\n- [x] two', el, A);
+    await expect.poll(() => el.querySelectorAll('input').length).toBe(2);
+    const { component } = MarkdownRenderer.calls.at(-1) ?? {};
+
+    expect([...el.querySelectorAll('input')].every((box) => box.disabled)).toBe(true);
+    expect(component?.loaded).toBe(true);
+    release();
+    expect(component?.loaded).toBe(false);
+  });
+
+  it('shows the text itself when rendering fails', async () => {
+    const { plugin } = await boundPlugin([listing(A)]);
+    const el = document.createElement('div');
+    MarkdownRenderer.fail = true;
+
+    try {
+      plugin.renderMarkdown('plain', el, A);
+      await expect.poll(() => el.textContent).toBe('plain');
+    } finally {
+      MarkdownRenderer.fail = false;
+    }
   });
 });

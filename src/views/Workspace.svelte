@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte';
   import { navFilters, popTrail, pushTrail, type NavId } from '../state/navigation.ts';
+  import CreateForm from './CreateForm.svelte';
   import { follow } from './follow.svelte.ts';
   import type { WorkspaceHost } from './host.ts';
   import { icon } from './icon.ts';
@@ -31,13 +32,14 @@
   let trail = $state<readonly string[]>([]);
   let navOpen = $state(false);
   let detailOpen = $state(false);
+  let creating = $state(false);
   let dragging = $state<{ readonly startX: number; readonly startWidth: number } | undefined>();
 
   const narrow = $derived(width > 0 && width < NARROW_PX);
   const snapshot = $derived(followed.snapshot);
   const project = $derived(followed.state);
-  const showDetails = $derived(narrow && detailOpen && !navOpen);
-  const showList = $derived(!narrow || (!navOpen && !detailOpen));
+  const showDetails = $derived(narrow && (detailOpen || creating) && !navOpen);
+  const showList = $derived(!narrow || (!navOpen && !detailOpen && !creating));
 
   // The navigation entry is the filter. Re-apply it whenever it changes or a new project state replaces the old one.
   $effect(() => {
@@ -52,10 +54,22 @@
   function selectNav(id: NavId): void {
     navOpen = false;
     detailOpen = false;
+    creating = false;
     commit({ ...current, nav: id });
   }
 
+  function startCreating(): void {
+    navOpen = false;
+    creating = true;
+  }
+
+  function created(id: string): void {
+    creating = false;
+    openRow(id);
+  }
+
   function openRow(id: string): void {
+    creating = false;
     trail = [];
     project?.select(id);
     detailOpen = true;
@@ -114,6 +128,7 @@
     {/if}
     <span class="spacer"></span>
     {#if project}
+      <button type="button" onclick={startCreating}><span use:icon={'plus'}></span> {t('create.open')}</button>
       <button type="button" disabled={snapshot?.refreshing ?? false} onclick={() => void project.refresh()}>
         <span use:icon={'refresh-cw'}></span> {t('action.refresh')}
       </button>
@@ -138,6 +153,7 @@
           onPrefs={(patch) => { commit({ ...current, ...patch }); }}
           onOpen={openRow}
           onShowAll={() => { selectNav('all'); }}
+          onCreate={startCreating}
           onReset={() => { project.setFilters(navFilters(current.nav)); }}
         />
       </div>
@@ -162,13 +178,19 @@
       {/if}
       {#if !narrow || showDetails}
         <div class="pane-detail">
-          <Inspector
-            {snapshot}
-            id={snapshot.selectedId}
-            onOpen={openLink}
-            onBack={narrow || trail.length > 0 ? goBack : undefined}
-            onOpenTab={snapshot.selectedId === null ? undefined : () => void host.openIssue(snapshot.selectedId ?? '')}
-          />
+          {#if creating}
+            <CreateForm {project} {snapshot} onDone={created} onCancel={() => { creating = false; }} />
+          {:else}
+            <Inspector
+              {host}
+              {project}
+              {snapshot}
+              id={snapshot.selectedId}
+              onOpen={openLink}
+              onBack={narrow || trail.length > 0 ? goBack : undefined}
+              onOpenTab={snapshot.selectedId === null ? undefined : () => void host.openIssue(snapshot.selectedId ?? '')}
+            />
+          {/if}
         </div>
       {/if}
     </div>

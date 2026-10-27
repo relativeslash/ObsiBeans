@@ -83,6 +83,14 @@ export class WorkspaceLeaf {
     await this.view.setState(state.state ?? {}, {});
   }
 
+  /** Test hook: the files opened in this leaf. */
+  readonly opened: Entry[] = [];
+
+  openFile(file: Entry): Promise<void> {
+    this.opened.push(file);
+    return Promise.resolve();
+  }
+
   async detach(): Promise<void> {
     await this.view?.close();
     this.view = undefined;
@@ -151,10 +159,16 @@ export interface EventRef {
 
 export class Vault {
   adapter: unknown;
+  /** Test hook: the vault paths that exist. */
+  readonly files = new Set<string>();
   private readonly refs = new Set<EventRef>();
 
   constructor(adapter: unknown) {
     this.adapter = adapter;
+  }
+
+  getFileByPath(path: string): Entry | null {
+    return this.files.has(path) ? { path } : null;
   }
 
   on(name: string, callback: (...args: never[]) => unknown): EventRef {
@@ -177,8 +191,44 @@ export class Vault {
   }
 }
 
+export class FileManager {
+  generateMarkdownLink(file: Entry, sourcePath: string): string {
+    return `[[${file.path}]]${sourcePath}`;
+  }
+}
+
+/** Lifecycle owner of rendered content. */
+export class Component {
+  loaded = false;
+  load(): void {
+    this.loaded = true;
+  }
+
+  unload(): void {
+    this.loaded = false;
+  }
+}
+
+export const MarkdownRenderer = {
+  /** Test hook: what the last call received. Writes the Markdown as text, with one task checkbox per `- [ ]` line. */
+  calls: [] as { markdown: string; sourcePath: string; component: Component }[],
+  fail: false,
+  render(_app: unknown, markdown: string, el: HTMLElement, sourcePath: string, component: Component): Promise<void> {
+    MarkdownRenderer.calls.push({ markdown, sourcePath, component });
+    if (MarkdownRenderer.fail) return Promise.reject(new Error('render failed'));
+    el.textContent = markdown;
+    for (let count = markdown.match(/^\s*- \[[ x]\]/gm)?.length ?? 0; count > 0; count--) {
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      el.append(box);
+    }
+    return Promise.resolve();
+  },
+};
+
 export class App {
   readonly workspace = new Workspace();
+  readonly fileManager = new FileManager();
   readonly vault: Vault;
 
   constructor(vaultRoot?: string) {

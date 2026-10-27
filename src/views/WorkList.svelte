@@ -18,10 +18,12 @@
     onPrefs: (patch: Partial<Pick<Layout, 'columns' | 'sort'>>) => void;
     onOpen: (id: string) => void;
     onShowAll: () => void;
+    /** Opens the creation form (the TUI's `c`). */
+    onCreate?: (() => void) | undefined;
     /** Back to the filters of the current navigation entry. */
     onReset: () => void;
   }
-  let { project, snapshot, active, columns, sort, onPrefs, onOpen, onShowAll, onReset }: Props = $props();
+  let { project, snapshot, active, columns, sort, onPrefs, onOpen, onShowAll, onReset, onCreate }: Props = $props();
 
   const VIEW = 'workspace-list';
   let scroller: HTMLElement | undefined = $state();
@@ -80,6 +82,7 @@
       return controls?.focusSearch();
     }
     if (event.key === 'y') return void controls?.copy();
+    if (event.key === 'c' && onCreate) return onCreate();
     if (!target.matches('button.row')) return;
     const all = [...(scroller?.querySelectorAll<HTMLElement>('button.row') ?? [])];
     const at = all.indexOf(target);
