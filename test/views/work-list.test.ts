@@ -27,6 +27,8 @@ async function open(made: Harness, layout: Layout = DEFAULT_LAYOUT) {
     state: made.state,
     bindingText: '',
     density: 'comfortable',
+    savedViews: [],
+    changeViews: () => Promise.resolve({ ok: true, entries: [] }),
     onBindingChange: () => () => undefined,
     openIssue: () => Promise.resolve(),
     renderMarkdown: () => () => undefined,

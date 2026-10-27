@@ -201,6 +201,15 @@ export class WorkspaceState {
     this.changed();
   }
 
+  /**
+   * The cached beans passing `filters` in the default order, whatever filters the list shows. Compact views such as
+   * the sidebar use it, so Ready means what the backend says (`readiness`), exactly as in the workspace.
+   */
+  matching(filters: Filters): readonly BeanSummary[] {
+    const { cache } = this;
+    return cache ? cache.beans.filter((bean) => matchesFilters(bean, filters, cache.readiness)) : [];
+  }
+
   /** The bean shown in the inspector. Unknown IDs are ignored; `null` clears it. */
   select(id: string | null): void {
     if (id !== null && !this.cache?.byId.has(id)) return;

@@ -357,6 +357,42 @@ console.log(JSON.stringify({ beans: names().map((name) => { const { body, ...row
     await session.waitFor(`!!document.querySelector('.obsibeans-workspace ul.rows') && !document.querySelector('.obsibeans-workspace .board')`, 'the list to return');
     check(true, 'switching back shows the list again');
 
+    // Saved views: plugin data only. Saving, applying and removing leave the bean files alone and survive a reload.
+    const beanBefore = readFileSync(taskFile, 'utf8');
+    await session.evaluate(`(() => { const input = document.querySelector('.obsibeans-workspace nav input[type="text"]'); input.value = 'Native view'; input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+    await session.evaluate(`${buttonByText('.obsibeans-workspace nav', en['saved.save'])}.click()`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace nav [aria-current="page"]')?.textContent.trim() === 'Native view'`, 'the saved view to become the active entry');
+    await session.waitFor(`app.plugins.plugins[${id}].savedViews.length === 1`, 'the saved view to be stored');
+    await session.evaluate(`${buttonByText('.obsibeans-workspace nav', en['nav.blocked'])}.click()`);
+    await session.evaluate(`${buttonByText('.obsibeans-workspace nav', 'Native view')}.click()`);
+    await session.waitFor(`app.plugins.plugins[${id}].state.getSnapshot().filters.readiness === 'any' && app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.getState().layout.savedView !== null`, 'the saved view to be applied again');
+    check(await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.getState().layout.savedView === app.plugins.plugins[${id}].savedViews[0].view.id`), 'the applied saved view is part of the saved workspace layout');
+    let stored: { schemaVersion?: number; savedViews?: { name: string }[] } = {};
+    for (let attempt = 0; attempt < 20 && stored.savedViews?.length !== 1; attempt++) {
+      await delay(100);
+      stored = JSON.parse(readFileSync(join(pluginDir, 'data.json'), 'utf8')) as typeof stored;
+    }
+    check(stored.schemaVersion === 1 && stored.savedViews?.[0]?.name === 'Native view', 'the saved view is written to the plugin data with its schema version');
+    check(readFileSync(taskFile, 'utf8') === beanBefore, 'saving and applying a view does not write the bean file');
+
+    // Sidebar: a compact pane in the right split that follows the same state and keeps keyboard focus.
+    await session.evaluate(`app.commands.executeCommandById(${id} + ':open-sidebar')`);
+    await session.waitFor(`!!document.querySelector('section.sidebar h2') && document.querySelectorAll('section.sidebar h2').length === 2`, 'the sidebar to list Ready and In progress');
+    check(await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-sidebar').length === 1 && app.workspace.getLeavesOfType('obsibeans-sidebar')[0].getRoot() === app.workspace.rightSplit`), 'the sidebar opens in the right split, once');
+    await session.evaluate(`app.commands.executeCommandById(${id} + ':open-sidebar')`);
+    check(await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-sidebar').length === 1`), 'opening the sidebar again reveals it instead of adding another');
+    await screenshot('sidebar');
+    check(await session.evaluate(`(() => { const row = document.querySelector('section.sidebar button.row'); if (!row) return document.querySelector('section.sidebar .message') !== null; row.focus(); return document.activeElement === row && row.getBoundingClientRect().width > 0; })()`), 'a sidebar row takes keyboard focus, or the sidebar says nothing is ready');
+    check(await session.evaluate(`(() => { const bar = document.querySelector('section.sidebar'); return bar.scrollWidth <= bar.clientWidth + 1; })()`), 'the sidebar does not scroll sideways at its narrow width');
+    await session.evaluate(`(app.workspace.getLeavesOfType('obsibeans-sidebar')[0].detach(), app.workspace.rightSplit.collapse(), true)`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace')?.clientWidth >= 760`, 'the workspace pane to be wide after closing the sidebar');
+    await session.evaluate(`${buttonByText('.obsibeans-workspace nav', en['saved.remove'])}.click()`);
+    await session.evaluate(`${buttonByText('.obsibeans-workspace nav', en['saved.remove'])}.click()`);
+    await session.waitFor(`app.plugins.plugins[${id}].savedViews.length === 0 && document.querySelector('.obsibeans-workspace nav [aria-current="page"]')?.textContent.trim() === ${JSON.stringify(en['nav.blocked'])}`, 'removing the applied saved view to fall back to the built-in entry used before it');
+    check(readFileSync(taskFile, 'utf8') === beanBefore, 'removing a view does not write the bean file');
+    await session.evaluate(`${buttonByText('.obsibeans-workspace nav', en['nav.all'])}.click()`);
+    await session.waitFor(`document.querySelectorAll('.obsibeans-workspace button.row').length > 0`, 'All work to list the beans again');
+
     // Hierarchy: an epic with a child, opened with the keyboard in the real app; the two files are removed again afterwards.
     writeFileSync(join(vault, 'Task root', 'FX-hier1--epic.md'), '---\ntitle: Native epic\ntype: epic\n---\n');
     writeFileSync(join(vault, 'Task root', 'FX-hier2--child.md'), '---\ntitle: Native child\nparent: FX-hier1\n---\n');

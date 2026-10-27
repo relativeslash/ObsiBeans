@@ -1,4 +1,5 @@
 import type { Snapshot } from '../state/model.ts';
+import type { ViewEntry } from '../state/saved-views.ts';
 import type { WorkspaceState } from '../state/workspace-state.ts';
 import type { Density, WorkspaceHost } from './host.ts';
 
@@ -8,6 +9,7 @@ export interface Followed {
   readonly snapshot: Snapshot | undefined;
   readonly bindingText: string;
   readonly density: Density;
+  readonly savedViews: readonly ViewEntry[];
   /** Stops following. Call when the component is destroyed. */
   stop(): void;
 }
@@ -21,6 +23,7 @@ export function follow(host: WorkspaceHost): Followed {
   let snapshot = $state.raw(host.state?.getSnapshot());
   let bindingText = $state(host.bindingText);
   let density = $state(host.density);
+  let savedViews = $state.raw(host.savedViews);
   let unsubscribe: (() => void) | undefined;
 
   const attach = (): void => {
@@ -35,6 +38,7 @@ export function follow(host: WorkspaceHost): Followed {
   const stopHost = host.onBindingChange(() => {
     bindingText = host.bindingText;
     density = host.density;
+    savedViews = host.savedViews;
     if (host.state !== state) attach();
   });
 
@@ -43,6 +47,7 @@ export function follow(host: WorkspaceHost): Followed {
     get snapshot() { return snapshot; },
     get bindingText() { return bindingText; },
     get density() { return density; },
+    get savedViews() { return savedViews; },
     stop() {
       stopHost();
       unsubscribe?.();

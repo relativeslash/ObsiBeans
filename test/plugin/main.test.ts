@@ -7,7 +7,7 @@ import type { BindingDiagnostic } from '../../src/adapter/binding.ts';
 import ObsiBeansPlugin from '../../src/plugin/main.ts';
 import { describeBinding, ObsiBeansSettingTab } from '../../src/plugin/settings-tab.ts';
 import { en } from '../../src/views/messages.en.ts';
-import { ISSUE_VIEW_TYPE, IssueView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../../src/views/workspace-view.ts';
+import { ISSUE_VIEW_TYPE, IssueView, SIDEBAR_VIEW_TYPE, SidebarView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../../src/views/workspace-view.ts';
 import { App, bridge, type Plugin, type PluginSettingTab, WorkspaceLeaf } from '../support/obsidian.ts';
 import { makeProject, makeSandbox, trust, writeFakeBeans, type Sandbox } from '../support/project.ts';
 
@@ -77,15 +77,28 @@ describe('plugin shell', () => {
   it('registers the workspace view, open command and settings tab on load', async () => {
     const { app, shell, plugin } = await loadPlugin();
 
-    expect([...app.workspace.viewCreators.keys()]).toEqual([WORKSPACE_VIEW_TYPE, ISSUE_VIEW_TYPE]);
+    expect([...app.workspace.viewCreators.keys()]).toEqual([WORKSPACE_VIEW_TYPE, SIDEBAR_VIEW_TYPE, ISSUE_VIEW_TYPE]);
     expect(shell.commands.map(({ id, name }) => ({ id, name }))).toEqual([
       { id: 'open-workspace', name: en['command.openWorkspace'] },
+      { id: 'open-sidebar', name: en['command.openSidebar'] },
       { id: 'refresh', name: en['command.refresh'] },
       { id: 'close-view', name: en['command.closeView'] },
     ]);
     expect(bridge<Plugin>(plugin).ribbon.map(({ icon, title }) => ({ icon, title }))).toEqual([{ icon: 'list-checks', title: en['command.openWorkspace'] }]);
     expect(shell.settingTabs).toHaveLength(1);
     expect(shell.settingTabs[0]).toBeInstanceOf(ObsiBeansSettingTab);
+  });
+
+  it('opens one sidebar leaf and reveals it again instead of opening another', async () => {
+    const { app, shell } = await loadPlugin();
+    const open = shell.commands.find((command) => command.id === 'open-sidebar')?.callback;
+
+    await open?.();
+    await open?.();
+
+    const leaves = app.workspace.getLeavesOfType(SIDEBAR_VIEW_TYPE);
+    expect(leaves).toHaveLength(1);
+    expect(leaves[0]?.view).toBeInstanceOf(SidebarView);
   });
 
   it('opens one workspace tab and reveals it again instead of opening another', async () => {
@@ -195,7 +208,7 @@ describe('project binding settings', () => {
     expect(tab.getControlValue('config')).toBe('sub/.beans.yml');
     expect(tab.getControlValue('confirmedExecutable')).toBeUndefined();
     expect(plugin.settings.confirmedExecutable).toBe('');
-    expect(shell.data).toEqual({ executable: '/opt/beans', confirmedExecutable: '', confirmedDigest: '', config: 'sub/.beans.yml', density: 'comfortable', drafts: [] });
+    expect(shell.data).toEqual({ executable: '/opt/beans', confirmedExecutable: '', confirmedDigest: '', config: 'sub/.beans.yml', density: 'comfortable', schemaVersion: 1, savedViews: [], drafts: [] });
   });
 
   it('requires an explicit trust step, then binds and remembers it across reloads', async () => {

@@ -1,3 +1,4 @@
+import type { ViewChange, ViewEntry, ViewResult } from '../state/saved-views.ts';
 import type { WorkspaceState } from '../state/workspace-state.ts';
 
 /** Row spacing preference. */
@@ -11,7 +12,11 @@ export interface WorkspaceHost {
   /** One translated line: checking, bound, or why binding failed. */
   readonly bindingText: string;
   readonly density: Density;
-  /** Calls `listener` whenever the binding or a setting changes. Returns the function that stops it. */
+  /** The saved views, valid and invalid, in stored order. Plugin-local data, never bean data. */
+  readonly savedViews: readonly ViewEntry[];
+  /** Applies one change to the saved views and stores it. Fails with `storage` when the plugin data cannot be written. */
+  changeViews(change: ViewChange): Promise<ViewResult>;
+  /** Calls `listener` whenever the binding, a setting or the saved views change. Returns the function that stops it. */
   onBindingChange(listener: () => void): () => void;
   /** Opens the bean in its own tab, or reveals the tab that already shows it. */
   openIssue(id: string): Promise<void>;

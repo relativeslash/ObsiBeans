@@ -124,6 +124,10 @@ export class Workspace {
     return leaf;
   }
 
+  getRightLeaf(): WorkspaceLeaf | null {
+    return this.getLeaf();
+  }
+
   revealLeaf(leaf: WorkspaceLeaf): Promise<void> {
     this.revealed.push(leaf);
     return Promise.resolve();

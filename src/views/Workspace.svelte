@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte';
   import { navFilters, popTrail, pushTrail, type NavId } from '../state/navigation.ts';
+  import { contentOf, viewFilters, type ViewChange, type ViewResult } from '../state/saved-views.ts';
+  import { tagCounts } from '../state/filters.ts';
   import CreateForm from './CreateForm.svelte';
   import { follow } from './follow.svelte.ts';
   import type { WorkspaceHost } from './host.ts';
@@ -43,11 +45,20 @@
   const showDetails = $derived(narrow && (detailOpen || creating) && !navOpen);
   const showList = $derived(!narrow || (!navOpen && !detailOpen && !creating));
 
-  // Read through a derived value: other layout changes (view, sort) replace `current` but must not reset the filters.
+  // Read through derived values: other layout changes (view, sort) replace `current` but must not reset the filters.
   const nav = $derived(current.nav);
-  // The navigation entry is the filter. Re-apply it whenever it changes or a new project state replaces the old one.
+  const views = $derived(followed.savedViews);
+  const activeView = $derived(views.find((entry) => entry.kind === 'view' && entry.view.id === current.savedView));
+  // A saved view that was removed (here or in another tab) is reported and replaced by the built-in entry.
+  const viewMissing = $derived(current.savedView !== null && activeView === undefined);
+  const targetFilters = $derived(activeView?.kind === 'view' ? viewFilters(activeView.view) : navFilters(nav));
+  // Compared by value: renaming a view or replacing the list must not wipe the filters the user is editing.
+  const filterKey = $derived(JSON.stringify(targetFilters));
+  const tags = $derived(snapshot && snapshot.refreshedAt !== null ? new Set(tagCounts(snapshot.beans).map(([tag]) => tag)) : undefined);
+  // The active entry is the filter. Re-apply it whenever it changes or a new project state replaces the old one.
   $effect(() => {
-    project?.setFilters(navFilters(nav));
+    void filterKey;
+    project?.setFilters(untrack(() => targetFilters));
   });
 
   function commit(next: Layout): void {
@@ -59,7 +70,26 @@
     navOpen = false;
     detailOpen = false;
     creating = false;
-    commit({ ...current, nav: id });
+    commit({ ...current, nav: id, savedView: null });
+  }
+
+  function applyView(id: string): void {
+    const entry = views.find((one) => one.kind === 'view' && one.view.id === id);
+    if (entry?.kind !== 'view') return;
+    const { view } = entry;
+    navOpen = false;
+    detailOpen = false;
+    creating = false;
+    // Applying again drops ad-hoc filter edits, as choosing a built-in entry does.
+    project?.setFilters(viewFilters(view));
+    commit({ ...current, savedView: id, view: view.representation, sort: view.sort, swimlanes: view.swimlanes });
+  }
+
+  async function changeViews(change: ViewChange): Promise<ViewResult> {
+    const result = await host.changeViews(change);
+    if (result.ok && change.kind === 'save' && result.id !== undefined) commit({ ...current, savedView: result.id });
+    if (result.ok && change.kind === 'remove' && change.entry.kind === 'view' && change.entry.view.id === current.savedView) commit({ ...current, savedView: null });
+    return result;
   }
 
   function startCreating(parent?: string): void {
@@ -144,9 +174,27 @@
   {#if !project || !snapshot}
     <p class="unbound" role="status">{followed.bindingText} {t('workspace.hint')}</p>
   {:else}
+    {#if viewMissing}
+      <p class="banner" role="status">
+        {t('saved.missing')}
+        <button type="button" onclick={() => { commit({ ...current, savedView: null }); }}>{t('action.dismiss')}</button>
+      </p>
+    {/if}
     <div class="panes">
       {#if !narrow || navOpen}
-        <div class="pane-nav"><Navigation active={current.nav} onSelect={selectNav} /></div>
+        <div class="pane-nav">
+          <Navigation
+            active={current.nav}
+            activeView={activeView?.kind === 'view' ? current.savedView : null}
+            onSelect={selectNav}
+            {views}
+            vocabulary={project.vocabulary}
+            {tags}
+            content={contentOf(snapshot.filters, current)}
+            onApply={applyView}
+            onChange={changeViews}
+          />
+        </div>
       {/if}
       <div class="pane-list" hidden={!showList}>
         <WorkList
@@ -162,7 +210,7 @@
           onShowAll={() => { selectNav('all'); }}
           onCreate={() => { startCreating(); }}
           onNewChild={startCreating}
-          onReset={() => { project.setFilters(navFilters(current.nav)); }}
+          onReset={() => { project.setFilters(targetFilters); }}
         />
       </div>
       {#if !narrow}
@@ -214,6 +262,7 @@
   .toolbar button { display: inline-flex; gap: var(--size-4-1); align-items: center; }
   .toolbar h1 { margin: 0; font-size: var(--font-ui-large); }
   .spacer { flex: 1; }
+  .banner { display: flex; gap: var(--size-4-2); align-items: center; margin: var(--size-4-2); padding: var(--size-4-2) var(--size-4-3); border-radius: var(--radius-s); background: var(--background-modifier-message); }
   .unbound { padding: var(--size-4-4); color: var(--text-muted); }
   .panes { display: grid; flex: 1; min-height: 0; grid-template-columns: 11rem minmax(0, 1fr) 6px var(--inspector-width); }
   .narrow .panes { grid-template-columns: minmax(0, 1fr); }
