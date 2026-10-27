@@ -7,10 +7,11 @@ import { bindProject, configUnchanged, confirmExecutable, type Binding } from '.
 import { ProcessRunner } from '../adapter/process.ts';
 import { parseDrafts } from '../state/drafts.ts';
 import type { BeansPort, Draft } from '../state/model.ts';
+import { applyViewChange, loadViews, SCHEMA_VERSION, serializeViews, type ViewChange, type ViewEntry, type ViewResult } from '../state/saved-views.ts';
 import { WorkspaceState } from '../state/workspace-state.ts';
 import { t } from '../views/i18n.ts';
 import type { Density, WorkspaceHost } from '../views/host.ts';
-import { ISSUE_VIEW_TYPE, IssueView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../views/workspace-view.ts';
+import { ISSUE_VIEW_TYPE, IssueView, SIDEBAR_VIEW_TYPE, SidebarView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../views/workspace-view.ts';
 import { parseSettings, type BindingState, type ObsiBeansSettings, type SettingsHost } from './settings.ts';
 import { describeBinding, ObsiBeansSettingTab } from './settings-tab.ts';
 
@@ -24,6 +25,8 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
   state: WorkspaceState | undefined;
   private generation = 0;
   private readonly listeners = new Set<() => void>();
+  savedViews: readonly ViewEntry[] = [];
+  private schemaVersion = SCHEMA_VERSION;
   private drafts: readonly Draft[] = [];
   private writes: Promise<unknown> = Promise.resolve();
 
@@ -31,10 +34,15 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
     const stored = await this.loadData() as unknown;
     this.settings = parseSettings(stored);
     this.drafts = parseDrafts(typeof stored === 'object' && stored !== null && 'drafts' in stored ? stored.drafts : undefined);
+    const views = loadViews(stored);
+    this.savedViews = views.entries;
+    this.schemaVersion = views.schemaVersion;
     this.registerView(WORKSPACE_VIEW_TYPE, (leaf) => new WorkspaceView(leaf, this));
+    this.registerView(SIDEBAR_VIEW_TYPE, (leaf) => new SidebarView(leaf, this));
     this.registerView(ISSUE_VIEW_TYPE, (leaf) => new IssueView(leaf, this));
     this.addRibbonIcon('list-checks', t('command.openWorkspace'), () => void this.openWorkspace());
     this.addCommand({ id: 'open-workspace', name: t('command.openWorkspace'), callback: () => this.openWorkspace() });
+    this.addCommand({ id: 'open-sidebar', name: t('command.openSidebar'), callback: () => this.openSidebar() });
     this.addCommand({ id: 'refresh', name: t('command.refresh'), callback: () => void this.state?.refresh() });
     this.addCommand({ id: 'close-view', name: t('command.closeView'), checkCallback: (checking) => this.closeActiveView(checking) });
     const { vault } = this.app;
@@ -91,9 +99,32 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
     this.publish();
   }
 
-  /** Settings and drafts share one data file, so every write carries both and writes never overlap. */
+  /**
+   * Applies one saved-view change and stores it. Views are plugin data only; no bean file is read or written.
+   * A failed write restores the previous list (unless a later change already replaced it) and reports `storage`.
+   */
+  async changeViews(change: ViewChange): Promise<ViewResult> {
+    const before = this.savedViews;
+    const result = applyViewChange(before, change, crypto.randomUUID());
+    if (!result.ok) return result;
+    this.savedViews = result.entries;
+    this.publish();
+    try {
+      await this.persist();
+    } catch (error) {
+      console.error('ObsiBeans: saving the views failed', error);
+      if (this.savedViews === result.entries) this.savedViews = before;
+      this.publish();
+      return { ok: false, reason: 'storage' };
+    }
+    return result;
+  }
+
+  /** Settings, saved views and drafts share one data file, so every write carries all of them and writes never overlap. */
   private persist(): Promise<void> {
-    const write = this.writes.catch(() => undefined).then(() => this.saveData({ ...this.settings, drafts: this.drafts }));
+    const write = this.writes
+      .catch(() => undefined)
+      .then(() => this.saveData({ ...this.settings, schemaVersion: this.schemaVersion, savedViews: serializeViews(this.savedViews), drafts: this.drafts }));
     this.writes = write;
     return write;
   }
@@ -222,6 +253,15 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
       el.textContent = markdown;
     });
     return () => { component.unload(); };
+  }
+
+  /** Reveals the compact Ready / In progress sidebar, or opens it in the right sidebar. */
+  async openSidebar(): Promise<void> {
+    const { workspace } = this.app;
+    const leaf = workspace.getLeavesOfType(SIDEBAR_VIEW_TYPE)[0] ?? workspace.getRightLeaf(false);
+    if (!leaf) return;
+    await leaf.setViewState({ type: SIDEBAR_VIEW_TYPE, active: true });
+    await workspace.revealLeaf(leaf);
   }
 
   /** Reveals the existing workspace tab, or opens one in a new tab. */

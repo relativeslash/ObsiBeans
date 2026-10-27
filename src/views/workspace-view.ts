@@ -4,10 +4,12 @@ import type { WorkspaceHost } from './host.ts';
 import { t } from './i18n.ts';
 import IssueTab from './IssueTab.svelte';
 import { DEFAULT_LAYOUT, parseLayout, type Layout } from './layout.ts';
+import Sidebar from './Sidebar.svelte';
 import Workspace from './Workspace.svelte';
 
 export const WORKSPACE_VIEW_TYPE = 'obsibeans-workspace';
 export const ISSUE_VIEW_TYPE = 'obsibeans-issue';
+export const SIDEBAR_VIEW_TYPE = 'obsibeans-sidebar';
 
 /** Shared lifecycle: the Svelte component lives exactly between `onOpen` and `onClose`, and can be remounted with new input. */
 abstract class SvelteItemView extends ItemView {
@@ -123,5 +125,24 @@ export class IssueView extends SvelteItemView {
 
   protected render(): ReturnType<typeof mount> {
     return mount(IssueTab, { target: this.contentEl, props: { host: this.host, id: this.beanId, onClose: this.closeTab } });
+  }
+}
+
+/** The compact Ready / In progress list for a side pane. It shares the workspace's state and opens beans in issue tabs. */
+export class SidebarView extends SvelteItemView {
+  getViewType(): string {
+    return SIDEBAR_VIEW_TYPE;
+  }
+
+  getDisplayText(): string {
+    return t('sidebar.title');
+  }
+
+  override getIcon(): string {
+    return 'list-todo';
+  }
+
+  protected render(): ReturnType<typeof mount> {
+    return mount(Sidebar, { target: this.contentEl, props: { host: this.host } });
   }
 }

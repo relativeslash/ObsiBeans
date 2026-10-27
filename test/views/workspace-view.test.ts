@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ViewResult } from '../../src/state/saved-views.ts';
 import type { Density, WorkspaceHost } from '../../src/views/host.ts';
 import { en } from '../../src/views/messages.en.ts';
-import { ISSUE_VIEW_TYPE, IssueView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../../src/views/workspace-view.ts';
+import { parseLayout } from '../../src/views/layout.ts';
+import { ISSUE_VIEW_TYPE, IssueView, SIDEBAR_VIEW_TYPE, SidebarView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../../src/views/workspace-view.ts';
 import type { WorkspaceState } from '../../src/state/workspace-state.ts';
 import { App, bridge, type ItemView } from '../support/obsidian.ts';
 import { A, B, backend, bean, C, loaded, harness, read } from '../state/support.ts';
@@ -14,6 +16,7 @@ class FakeHost implements WorkspaceHost {
   bindingText = 'Checking the Beans project...';
   density: Density = 'comfortable';
   readonly opened: string[] = [];
+  savedViews: WorkspaceHost['savedViews'] = [];
   private readonly listeners = new Set<() => void>();
 
   onBindingChange(listener: () => void): () => void {
@@ -23,6 +26,10 @@ class FakeHost implements WorkspaceHost {
 
   get listenerCount(): number {
     return this.listeners.size;
+  }
+
+  changeViews(): Promise<ViewResult> {
+    return Promise.resolve({ ok: true, entries: this.savedViews });
   }
 
   openIssue(id: string): Promise<void> {
@@ -94,12 +101,13 @@ interface Opened<V> {
   button: (label: string) => HTMLButtonElement | undefined;
 }
 
-async function open<V extends WorkspaceView | IssueView>(create: new (...args: never[]) => V, state?: Record<string, unknown>, host = new FakeHost()): Promise<Opened<V>> {
+async function open<V extends WorkspaceView | IssueView | SidebarView>(create: new (...args: never[]) => V, state?: Record<string, unknown>, host = new FakeHost()): Promise<Opened<V>> {
   const app = new App();
   app.workspace.viewCreators.set(WORKSPACE_VIEW_TYPE, (leaf) => bridge(new WorkspaceView(bridge(leaf), host)));
   app.workspace.viewCreators.set(ISSUE_VIEW_TYPE, (leaf) => bridge(new IssueView(bridge(leaf), host)));
+  app.workspace.viewCreators.set(SIDEBAR_VIEW_TYPE, (leaf) => bridge(new SidebarView(bridge(leaf), host)));
   const leaf = app.workspace.getLeaf();
-  await leaf.setViewState({ type: create === WorkspaceView ? WORKSPACE_VIEW_TYPE : ISSUE_VIEW_TYPE, ...(state && { state }) });
+  await leaf.setViewState({ type: create === WorkspaceView ? WORKSPACE_VIEW_TYPE : create === SidebarView ? SIDEBAR_VIEW_TYPE : ISSUE_VIEW_TYPE, ...(state && { state }) });
   const view = leaf.view as unknown as V;
   const el = bridge<ItemView>(view).contentEl;
   document.body.append(bridge<ItemView>(view).containerEl);
@@ -244,7 +252,7 @@ describe('built-in navigation', () => {
 
   it('falls back to defaults for damaged saved layout and remounts when it is restored', async () => {
     const { view, el } = await open(WorkspaceView, { layout: { nav: 'nope', inspectorWidth: 'wide' } });
-    expect(view.getState().layout).toEqual({ nav: 'all', columns: ['id', 'status', 'type', 'priority'], sort: { key: 'default', descending: false }, view: 'list', swimlanes: 'none', inspectorWidth: 360 });
+    expect(view.getState().layout).toEqual({ nav: 'all', savedView: null, columns: ['id', 'status', 'type', 'priority'], sort: { key: 'default', descending: false }, view: 'list', swimlanes: 'none', inspectorWidth: 360 });
     expect(el.querySelectorAll('section[aria-label]')).toHaveLength(1);
 
     await view.setState({ layout: { nav: 'epics', inspectorWidth: 9999 } }, bridge({}));
@@ -554,5 +562,38 @@ describe('issue tab', () => {
     const ui = await open(IssueView, { id: A });
 
     expect(ui.el.querySelector('.unbound')?.textContent).toContain('Checking the Beans project...');
+  });
+});
+
+describe('sidebar view', () => {
+  it('lists ready and in-progress beans, opens one in its issue tab and releases its listeners on close', async () => {
+    const made = await loaded([bean(A, { status: 'in-progress' }), bean(B)], { readyIds: [B] });
+    const host = new FakeHost();
+    host.state = made.state;
+    const ui = await open(SidebarView, undefined, host);
+
+    expect(ui.view.getViewType()).toBe(SIDEBAR_VIEW_TYPE);
+    expect(ui.view.getDisplayText()).toBe(en['sidebar.title']);
+    expect(ui.el.querySelector('section')?.getAttribute('aria-label')).toBe(en['sidebar.label']);
+    await ui.press(`${B} Title ${B}`);
+    expect(host.opened).toEqual([B]);
+    expect(host.listenerCount).toBe(1);
+
+    await bridge<ItemView>(ui.view).close();
+    expect(host.listenerCount).toBe(0);
+  });
+
+  it('says why nothing is shown while no project is bound', async () => {
+    const ui = await open(SidebarView);
+    expect(ui.el.textContent).toContain(en['workspace.hint']);
+  });
+});
+
+describe('saved view in the layout', () => {
+  it('keeps the applied saved view ID and ignores a damaged one', () => {
+    expect(parseLayout({ savedView: 'abc' }).savedView).toBe('abc');
+    expect(parseLayout({ savedView: '' }).savedView).toBeNull();
+    expect(parseLayout({ savedView: 7 }).savedView).toBeNull();
+    expect(parseLayout(undefined).savedView).toBeNull();
   });
 });

@@ -1,9 +1,10 @@
 import { mount, tick, unmount } from 'svelte';
 import { afterEach, beforeEach, vi } from 'vitest';
 import type { AdapterError, Draft } from '../../src/state/model.ts';
+import { applyViewChange, type ViewChange, type ViewEntry, type ViewResult } from '../../src/state/saved-views.ts';
 import type { WorkspaceState } from '../../src/state/workspace-state.ts';
 import type { WorkspaceHost } from '../../src/views/host.ts';
-import { DEFAULT_LAYOUT } from '../../src/views/layout.ts';
+import { DEFAULT_LAYOUT, type Layout } from '../../src/views/layout.ts';
 import Workspace from '../../src/views/Workspace.svelte';
 import { A, B, bean, detail, type Harness } from '../state/support.ts';
 
@@ -22,6 +23,38 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/** Saved views kept in memory, behaving like the plugin shell: change, store, then tell the listeners. */
+export class MemoryViews {
+  entries: readonly ViewEntry[];
+  /** Makes the next stored change fail, as a full disk would. */
+  failStorage = false;
+  private readonly listeners = new Set<() => void>();
+  private ids = 0;
+
+  constructor(entries: readonly ViewEntry[] = []) {
+    this.entries = entries;
+  }
+
+  readonly listen = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  };
+
+  /** Tells every follower that something changed, as a rebind does. */
+  readonly notify = (): void => {
+    for (const listener of this.listeners) listener();
+  };
+
+  readonly change = (change: ViewChange): Promise<ViewResult> => {
+    const result = applyViewChange(this.entries, change, `view-${String(++this.ids)}`);
+    if (!result.ok) return Promise.resolve(result);
+    if (this.failStorage) return Promise.resolve({ ok: false, reason: 'storage' });
+    this.entries = result.entries;
+    this.notify();
+    return Promise.resolve(result);
+  };
+}
+
 /** A host that draws Markdown as text and records what the inspector asked of Obsidian. */
 export class TestHost implements WorkspaceHost {
   state: WorkspaceState;
@@ -36,8 +69,19 @@ export class TestHost implements WorkspaceHost {
     this.state = state;
   }
 
-  onBindingChange = (): (() => void) => () => undefined;
-  openIssue = (): Promise<void> => Promise.resolve();
+  readonly views = new MemoryViews();
+  onBindingChange = (listener: () => void): (() => void) => this.views.listen(listener);
+  changeViews = (change: ViewChange): Promise<ViewResult> => this.views.change(change);
+
+  get savedViews(): readonly ViewEntry[] {
+    return this.views.entries;
+  }
+
+  readonly issues: string[] = [];
+  openIssue = (id: string): Promise<void> => {
+    this.issues.push(id);
+    return Promise.resolve();
+  };
 
   renderMarkdown(markdown: string, el: HTMLElement, id: string): () => void {
     el.textContent = markdown;
@@ -62,10 +106,11 @@ export const settle = async (): Promise<void> => {
 export const beans = () => [bean(A, { title: 'Alpha', tags: ['ui'] }), bean(B, { title: 'Beta' })];
 export const stored = (extra: Partial<Draft> = {}): Draft => ({ kind: 'description', key: A, text: 'Draft text', revision: `rev-${A}`, savedAt: '2026-10-26T20:00:00Z', ...extra });
 
-export async function open(made: Harness) {
+export async function open(made: Harness, views: readonly ViewEntry[] = [], layout: Layout = DEFAULT_LAYOUT) {
   const host = new TestHost(made.state);
+  host.views.entries = views;
   const el = document.body.appendChild(document.createElement('div'));
-  mounts.push(mount(Workspace, { target: el, props: { host, layout: DEFAULT_LAYOUT, onLayout: () => undefined, onClose: () => undefined } }));
+  mounts.push(mount(Workspace, { target: el, props: { host, layout, onLayout: () => undefined, onClose: () => undefined } }));
   await tick();
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- the caller names the element type it expects
   const q = <T extends HTMLElement>(selector: string): T => {

@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ViewEntry } from '../../src/state/saved-views.ts';
 import ObsiBeansPlugin from '../../src/plugin/main.ts';
 import { App, bridge, MarkdownRenderer, type Plugin } from '../support/obsidian.ts';
 import { callsOf, makeProject, makeSandbox, script, trust, writeScriptedBeans, type Sandbox, type Step } from '../support/project.ts';
@@ -193,6 +194,72 @@ describe('draft storage', () => {
     const { plugin } = await boundPlugin([listing(A)], { drafts: 'garbage' });
 
     expect(plugin.state?.getSnapshot().drafts).toEqual([]);
+  });
+});
+
+describe('saved views in the plugin data', () => {
+  const content = { search: 'x', statuses: [], types: ['bug'], priorities: [], tags: [], readiness: 'blocked', representation: 'hierarchy', sort: { key: 'id', descending: true }, swimlanes: 'none' } as const;
+  const file = `Task root/${A}--t.md`;
+
+  it('stores views with a schema version beside settings and drafts, and reads them back after a restart', async () => {
+    const draft = { kind: 'description', key: A, text: 'keep me', revision: 'rev', savedAt: '2026-10-26T20:00:00Z' };
+    const first = await boundPlugin([listing(A)], { drafts: [draft] });
+    expect(first.plugin.savedViews).toEqual([]);
+
+    const saved = await first.plugin.changeViews({ kind: 'save', name: 'Blocked bugs', content });
+    expect(saved).toMatchObject({ ok: true });
+    expect(first.shell.data).toMatchObject({ schemaVersion: 1, config: '', drafts: [draft], savedViews: [{ name: 'Blocked bugs', ...content }] });
+
+    const second = await boundPlugin([listing(A)], first.shell.data as Record<string, unknown>);
+    expect(second.plugin.savedViews).toMatchObject([{ kind: 'view', view: { name: 'Blocked bugs', readiness: 'blocked' } }]);
+  });
+
+  it('migrates data written before saved views and tells followers about every change', async () => {
+    const { plugin, shell } = await boundPlugin([listing(A)]);
+    expect(shell.data).not.toHaveProperty('savedViews');
+    let calls = 0;
+    plugin.onBindingChange(() => calls++);
+
+    const saved = await plugin.changeViews({ kind: 'save', name: 'One', content });
+    const renamed = await plugin.changeViews({ kind: 'rename', id: saved.ok ? saved.id ?? '' : '', name: 'Two' });
+
+    expect(renamed.ok).toBe(true);
+    expect(calls).toBe(2);
+    expect(shell.data).toMatchObject({ schemaVersion: 1, savedViews: [{ name: 'Two' }] });
+  });
+
+  it('rewrites invalid entries and newer-version data exactly as stored', async () => {
+    const odd = [{ id: 'x', name: 'Broken' }, 42];
+    const damaged = await boundPlugin([listing(A)], { schemaVersion: 1, savedViews: odd });
+    await damaged.plugin.changeViews({ kind: 'save', name: 'Fine', content });
+    expect((damaged.shell.data as { savedViews: unknown[] }).savedViews.slice(0, 2)).toEqual(odd);
+
+    const newer = await boundPlugin([listing(A)], { schemaVersion: 9, savedViews: [{ future: true }] });
+    await newer.plugin.changeViews({ kind: 'remove', entry: newer.plugin.savedViews[0] as ViewEntry });
+    expect(newer.shell.data).toMatchObject({ schemaVersion: 9, savedViews: [] });
+  });
+
+  it('reports a failed write and keeps the previous list', async () => {
+    const { plugin, shell } = await boundPlugin([listing(A)]);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    shell.saveData = () => Promise.reject(new Error('disk full'));
+
+    expect(await plugin.changeViews({ kind: 'save', name: 'Lost', content })).toEqual({ ok: false, reason: 'storage' });
+    expect(plugin.savedViews).toEqual([]);
+    error.mockRestore();
+  });
+
+  it('never calls Beans or touches a bean file', async () => {
+    const { plugin } = await boundPlugin([listing(A)]);
+    await expect.poll(() => plugin.state?.getSnapshot().status).toBe('ready');
+    const before = await readFile(join(sandbox.vault, file), 'utf8');
+    const calls = (await callsOf(sandbox.outside)).length;
+
+    const saved = await plugin.changeViews({ kind: 'save', name: 'Quiet', content });
+    await plugin.changeViews({ kind: 'update', id: saved.ok ? saved.id ?? '' : '', content: { ...content, search: 'y' } });
+
+    expect(await readFile(join(sandbox.vault, file), 'utf8')).toBe(before);
+    expect((await callsOf(sandbox.outside)).length).toBe(calls);
   });
 });
 

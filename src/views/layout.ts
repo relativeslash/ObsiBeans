@@ -1,6 +1,7 @@
 import { DEFAULT_SORT, SORT_KEYS, type Sort } from '../state/model.ts';
 import type { Swimlanes } from '../state/board.ts';
 import { parseNavId, type NavId } from '../state/navigation.ts';
+import { REPRESENTATIONS } from '../state/saved-views.ts';
 
 /** Optional list columns, in display order. The title is always shown. */
 export const COLUMN_IDS = ['id', 'status', 'type', 'priority', 'tags', 'updated'] as const;
@@ -8,11 +9,13 @@ export type ColumnId = (typeof COLUMN_IDS)[number];
 const DEFAULT_COLUMNS: readonly ColumnId[] = ['id', 'status', 'type', 'priority'];
 
 /** The work view representations, in switch order. */
-export const VIEWS = ['list', 'board', 'hierarchy'] as const;
+export const VIEWS = REPRESENTATIONS;
 
 /** Saved with the workspace layout, so it survives restarts. */
 export interface Layout {
   readonly nav: NavId;
+  /** The applied saved view's ID, or null when a built-in entry (`nav`) is active. A missing ID is reported, not guessed. */
+  readonly savedView: string | null;
   readonly columns: readonly ColumnId[];
   readonly sort: Sort;
   /** The work view's representation. */
@@ -25,7 +28,7 @@ export interface Layout {
 
 export const INSPECTOR_MIN = 240;
 export const INSPECTOR_MAX = 720;
-export const DEFAULT_LAYOUT: Layout = { nav: 'all', columns: DEFAULT_COLUMNS, sort: DEFAULT_SORT, view: 'list', swimlanes: 'none', inspectorWidth: 360 };
+export const DEFAULT_LAYOUT: Layout = { nav: 'all', savedView: null, columns: DEFAULT_COLUMNS, sort: DEFAULT_SORT, view: 'list', swimlanes: 'none', inspectorWidth: 360 };
 
 export const clampWidth = (width: number): number => Math.min(INSPECTOR_MAX, Math.max(INSPECTOR_MIN, Math.round(width)));
 
@@ -37,6 +40,7 @@ export function parseLayout(value: unknown): Layout {
   const sort: Record<string, unknown> = typeof stored.sort === 'object' && stored.sort !== null ? { ...stored.sort } : {};
   return {
     nav: parseNavId(stored.nav),
+    savedView: typeof stored.savedView === 'string' && stored.savedView !== '' ? stored.savedView : null,
     // An empty list is a valid choice (title only); only a missing or non-list value falls back.
     columns: Array.isArray(columns) ? COLUMN_IDS.filter((id) => columns.includes(id)) : DEFAULT_COLUMNS,
     sort: { key: SORT_KEYS.find((key) => key === sort.key) ?? DEFAULT_SORT.key, descending: sort.descending === true },
