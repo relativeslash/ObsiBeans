@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { onDestroy, untrack } from 'svelte';
+  import { onDestroy, tick, untrack } from 'svelte';
   import { navFilters, popTrail, pushTrail, type NavId } from '../state/navigation.ts';
   import { contentOf, viewFilters, type ViewChange, type ViewResult } from '../state/saved-views.ts';
   import { tagCounts } from '../state/filters.ts';
+  import { DETAIL_ACTIONS, LIST_ACTIONS, type ActionId, type ActionPort } from './actions.ts';
   import CreateForm from './CreateForm.svelte';
   import { follow } from './follow.svelte.ts';
+  import Help from './Help.svelte';
   import type { WorkspaceHost } from './host.ts';
   import { icon } from './icon.ts';
   import { t } from './i18n.ts';
@@ -23,8 +25,10 @@
     layout: Layout;
     onLayout: (layout: Layout) => void;
     onClose: () => void;
+    /** Where the view offers its actions to palette commands while it is mounted. */
+    port?: ActionPort | undefined;
   }
-  let { host, layout, onLayout, onClose }: Props = $props();
+  let { host, layout, onLayout, onClose, port }: Props = $props();
 
   const followed = untrack(() => follow(host));
   onDestroy(followed.stop);
@@ -35,6 +39,11 @@
   let navOpen = $state(false);
   let detailOpen = $state(false);
   let creating = $state(false);
+  let helpOpen = $state(false);
+  let list: WorkList | undefined = $state();
+  let inspector: Inspector | undefined = $state();
+  let paneNav: HTMLElement | undefined = $state();
+  let paneDetail: HTMLElement | undefined = $state();
   /** The parent a new-child action pre-fills; the toolbar and list actions leave it open. */
   let newChildOf = $state<string | undefined>();
   let dragging = $state<{ readonly startX: number; readonly startWidth: number } | undefined>();
@@ -123,6 +132,52 @@
     } else detailOpen = false;
   }
 
+  /** The palette's way in. In a narrow pane the pane an action needs may be covered, so it is shown first. */
+  async function runAction(action: ActionId): Promise<void> {
+    if (action === 'help') helpOpen = true;
+    else if (action === 'back') goBack();
+    else if (LIST_ACTIONS.includes(action)) {
+      if (narrow && action !== 'new') {
+        navOpen = false;
+        detailOpen = false;
+        creating = false;
+        await tick();
+      }
+      list?.run(action);
+    } else if (DETAIL_ACTIONS.includes(action)) {
+      if (narrow) {
+        if (snapshot?.selectedId === null) return;
+        navOpen = false;
+        creating = false;
+        detailOpen = true;
+        await tick();
+      }
+      inspector?.run(action);
+    }
+  }
+
+  $effect(() => {
+    if (!port) return;
+    const run = (action: ActionId): void => { void runAction(action); };
+    port.run = run;
+    return () => {
+      if (port.run === run) port.run = undefined;
+    };
+  });
+
+  /** A pane that appears takes focus (unless something inside it already has it), so keyboard users land in it. */
+  const enter = (pane: HTMLElement | undefined): void => {
+    void tick().then(() => {
+      if (pane && !pane.contains(document.activeElement)) pane.querySelector<HTMLElement>('button')?.focus();
+    });
+  };
+  $effect(() => {
+    if (narrow && showDetails) enter(paneDetail);
+  });
+  $effect(() => {
+    if (narrow && navOpen) enter(paneNav);
+  });
+
   function startDrag(event: PointerEvent): void {
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     dragging = { startX: event.clientX, startWidth: current.inspectorWidth };
@@ -167,6 +222,7 @@
       <button type="button" disabled={snapshot?.refreshing ?? false} onclick={() => void project.refresh()}>
         <span use:icon={'refresh-cw'}></span> {t('action.refresh')}
       </button>
+      <button type="button" aria-haspopup="dialog" onclick={() => { helpOpen = true; }}><span use:icon={'keyboard'}></span> {t('action.help')}</button>
     {/if}
     <button type="button" onclick={onClose}><span use:icon={'x'}></span> {t('action.close')}</button>
   </header>
@@ -182,7 +238,7 @@
     {/if}
     <div class="panes">
       {#if !narrow || navOpen}
-        <div class="pane-nav">
+        <div class="pane-nav" bind:this={paneNav}>
           <Navigation
             active={current.nav}
             activeView={activeView?.kind === 'view' ? current.savedView : null}
@@ -198,6 +254,7 @@
       {/if}
       <div class="pane-list" hidden={!showList}>
         <WorkList
+          bind:this={list}
           {project}
           {snapshot}
           active={showList}
@@ -211,6 +268,7 @@
           onCreate={() => { startCreating(); }}
           onNewChild={startCreating}
           onReset={() => { project.setFilters(targetFilters); }}
+          onHelp={() => { helpOpen = true; }}
         />
       </div>
       {#if !narrow}
@@ -233,11 +291,12 @@
         ></div>
       {/if}
       {#if !narrow || showDetails}
-        <div class="pane-detail">
+        <div class="pane-detail" bind:this={paneDetail}>
           {#if creating}
             <CreateForm {project} {snapshot} parentId={newChildOf} onDone={created} onCancel={() => { creating = false; }} />
           {:else}
             <Inspector
+              bind:this={inspector}
               {host}
               {project}
               {snapshot}
@@ -245,6 +304,7 @@
               onOpen={openLink}
               onBack={narrow || trail.length > 0 ? goBack : undefined}
               onNewChild={startCreating}
+              onHelp={() => { helpOpen = true; }}
               onOpenTab={snapshot.selectedId === null ? undefined : () => void host.openIssue(snapshot.selectedId ?? '')}
             />
           {/if}
@@ -253,12 +313,13 @@
     </div>
     <StatusBar {project} {snapshot} />
   {/if}
+  {#if helpOpen}<Help scope="list" onClose={() => { helpOpen = false; }} />{/if}
 </section>
 
 <style>
-  .obsibeans-workspace { display: flex; flex-direction: column; height: 100%; --row-padding: var(--size-4-2); }
+  .obsibeans-workspace { position: relative; display: flex; flex-direction: column; height: 100%; --row-padding: var(--size-4-2); }
   .obsibeans-workspace.compact { --row-padding: var(--size-4-1); }
-  .toolbar { display: flex; gap: var(--size-4-2); align-items: center; padding: var(--size-4-2) var(--size-4-3); border-bottom: 1px solid var(--background-modifier-border); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: var(--size-4-2); align-items: center; padding: var(--size-4-2) var(--size-4-3); border-bottom: 1px solid var(--background-modifier-border); }
   .toolbar button { display: inline-flex; gap: var(--size-4-1); align-items: center; }
   .toolbar h1 { margin: 0; font-size: var(--font-ui-large); }
   .spacer { flex: 1; }
@@ -272,4 +333,6 @@
   .pane-list[hidden] { display: none; }
   .splitter { cursor: col-resize; background: var(--background-modifier-border); }
   .splitter:hover, .splitter:focus-visible { background: var(--interactive-accent); }
+  /* Several rows reset box-shadow, which is how Obsidian draws a button's focus ring; draw one that cannot be removed. */
+  :global(.obsibeans-workspace :is(button, summary):focus-visible) { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
 </style>

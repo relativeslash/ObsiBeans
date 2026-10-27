@@ -1,5 +1,6 @@
 import { ItemView, type ViewStateResult, type WorkspaceLeaf } from 'obsidian';
 import { mount, unmount } from 'svelte';
+import { ACTIONS, DETAIL_ACTIONS, type ActionId, type ActionPort } from './actions.ts';
 import type { WorkspaceHost } from './host.ts';
 import { t } from './i18n.ts';
 import IssueTab from './IssueTab.svelte';
@@ -16,6 +17,10 @@ abstract class SvelteItemView extends ItemView {
   protected readonly host: WorkspaceHost;
   private component: ReturnType<typeof mount> | undefined;
   private opened = false;
+  /** The mounted component's entry for palette commands. */
+  protected readonly port: ActionPort = {};
+  /** The palette actions this view offers. */
+  abstract readonly actions: readonly ActionId[];
 
   constructor(leaf: WorkspaceLeaf, host: WorkspaceHost) {
     super(leaf);
@@ -23,6 +28,15 @@ abstract class SvelteItemView extends ItemView {
   }
 
   protected abstract render(): ReturnType<typeof mount>;
+
+  /** True while the view is mounted and offers `action`; the palette command is only available then. */
+  can(action: ActionId): boolean {
+    return this.actions.includes(action) && this.port.run !== undefined;
+  }
+
+  run(action: ActionId): void {
+    if (this.can(action)) this.port.run?.(action);
+  }
 
   /** Replaces the component, e.g. after restored state changed its input. A closed view stays unmounted. */
   protected remount(): void {
@@ -54,6 +68,7 @@ abstract class SvelteItemView extends ItemView {
 
 /** The workspace tab: navigation, list and inspector. Its layout is saved with the Obsidian workspace layout. */
 export class WorkspaceView extends SvelteItemView {
+  readonly actions = ACTIONS;
   private layout: Layout = DEFAULT_LAYOUT;
 
   getViewType(): string {
@@ -89,6 +104,7 @@ export class WorkspaceView extends SvelteItemView {
           this.app.workspace.requestSaveLayout();
         },
         onClose: this.closeTab,
+        port: this.port,
       },
     });
   }
@@ -96,6 +112,7 @@ export class WorkspaceView extends SvelteItemView {
 
 /** One bean in its own tab. Several can be open; each is identified by its full bean ID. */
 export class IssueView extends SvelteItemView {
+  readonly actions: readonly ActionId[] = [...DETAIL_ACTIONS, 'back', 'help'];
   beanId = '';
 
   getViewType(): string {
@@ -124,12 +141,13 @@ export class IssueView extends SvelteItemView {
   }
 
   protected render(): ReturnType<typeof mount> {
-    return mount(IssueTab, { target: this.contentEl, props: { host: this.host, id: this.beanId, onClose: this.closeTab } });
+    return mount(IssueTab, { target: this.contentEl, props: { host: this.host, id: this.beanId, onClose: this.closeTab, port: this.port } });
   }
 }
 
 /** The compact Ready / In progress list for a side pane. It shares the workspace's state and opens beans in issue tabs. */
 export class SidebarView extends SvelteItemView {
+  readonly actions = [];
   getViewType(): string {
     return SIDEBAR_VIEW_TYPE;
   }

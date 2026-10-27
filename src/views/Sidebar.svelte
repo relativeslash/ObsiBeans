@@ -68,6 +68,7 @@
 
 <style>
   .sidebar { display: flex; flex-direction: column; height: 100%; overflow-y: auto; --row-padding: var(--size-4-1); }
+  .sidebar :global(button:focus-visible) { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
   .sidebar.compact { --row-padding: 0; }
   h2 { margin: var(--size-4-3) var(--size-4-3) var(--size-4-1); font-size: var(--font-ui-small); font-weight: var(--font-semibold); }
   .count, .id { color: var(--text-muted); font-size: var(--font-ui-smaller); }

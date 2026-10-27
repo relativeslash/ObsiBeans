@@ -164,6 +164,8 @@
   .label { min-width: 4.5rem; }
   .chip { height: auto; padding: 0 var(--size-4-2); font-size: var(--font-ui-smaller); }
   .chip[aria-pressed='true'], .line button[aria-pressed='true'] { background: var(--interactive-accent); color: var(--text-on-accent); }
+  /* A check mark, so an active chip or view is not shown by color alone. */
+  .chip[aria-pressed='true']::before, .line button[aria-pressed='true']::before { content: '✓ '; }
   .columns { position: relative; }
   .menu { position: absolute; inset-inline-end: 0; z-index: 1; display: flex; flex-direction: column; padding: var(--size-4-2); background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); }
 </style>

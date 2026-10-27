@@ -9,6 +9,7 @@ import { parseDrafts } from '../state/drafts.ts';
 import type { BeansPort, Draft } from '../state/model.ts';
 import { applyViewChange, loadViews, SCHEMA_VERSION, serializeViews, type ViewChange, type ViewEntry, type ViewResult } from '../state/saved-views.ts';
 import { WorkspaceState } from '../state/workspace-state.ts';
+import { ACTIONS, type ActionId } from '../views/actions.ts';
 import { t } from '../views/i18n.ts';
 import type { Density, RelatedNote, WorkspaceHost } from '../views/host.ts';
 import { ISSUE_VIEW_TYPE, IssueView, SIDEBAR_VIEW_TYPE, SidebarView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../views/workspace-view.ts';
@@ -51,6 +52,8 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
     this.addCommand({ id: 'open-sidebar', name: t('command.openSidebar'), callback: () => this.openSidebar() });
     this.addCommand({ id: 'refresh', name: t('command.refresh'), callback: () => void this.state?.refresh() });
     this.addCommand({ id: 'close-view', name: t('command.closeView'), checkCallback: (checking) => this.closeActiveView(checking) });
+    // Every keyboard action of a Beans view is also a command, offered while that view is active.
+    for (const action of ACTIONS) this.addCommand({ id: `action-${action}`, name: t(`command.${action}`), checkCallback: (checking) => this.runAction(action, checking) });
     this.addCommand({ id: 'insert-link', name: t('command.insertLink'), editorCheckCallback: (checking, editor, context) => this.notes.insertLink(checking, editor, context) });
     this.addCommand({ id: 'convert-selection', name: t('command.convertSelection'), editorCheckCallback: (checking, editor, context) => this.notes.convertSelection(checking, editor, context) });
     const { vault, workspace, metadataCache } = this.app;
@@ -213,6 +216,13 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
   private vaultRoot(): string | undefined {
     const { adapter } = this.app.vault;
     return adapter instanceof FileSystemAdapter ? adapter.getBasePath() : undefined;
+  }
+
+  private runAction(action: ActionId, checking: boolean): boolean {
+    const view = this.app.workspace.getActiveViewOfType(ItemView);
+    if (!(view instanceof WorkspaceView || view instanceof IssueView) || !view.can(action)) return false;
+    if (!checking) view.run(action);
+    return true;
   }
 
   /** Closes the active Beans tab only, never Obsidian. Offered only while one is active. */
