@@ -4,6 +4,7 @@
   import type { BeanSummary, Change, Snapshot } from '../state/model.ts';
   import type { WorkspaceState } from '../state/workspace-state.ts';
   import { describeError } from './errors.ts';
+  import BulkBar from './BulkBar.svelte';
   import { t } from './i18n.ts';
   import type { Layout } from './layout.ts';
   import ListControls from './ListControls.svelte';
@@ -123,6 +124,7 @@
 {#if controlsShown}
   <ListControls bind:this={controls} {project} {snapshot} {columns} {sort} {onPrefs} {onReset} />
 {/if}
+{#if controlsShown}<BulkBar {project} {snapshot} />{/if}
 <div class="list" bind:this={scroller} onscroll={() => { remember(project.getViewState(VIEW)?.focusId ?? null); }}>
   {#if snapshot.stale}
     <div class="banner" role="alert">

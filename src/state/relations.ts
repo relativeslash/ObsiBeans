@@ -123,6 +123,14 @@ export function localProblem(beans: readonly BeanSummary[], id: string, change: 
   const bean = beans.find((other) => other.id === id);
   if (!bean) return undefined;
   if (change.kind === 'fields' && change.type !== undefined) return typeBlockers(beans, bean, types).get(change.type);
+  if (change.kind === 'parent' && change.parentId !== null) {
+    // The picker only offers eligible parents; a bulk edit applies one choice to many beans, so each is checked here.
+    const parent = beans.find((other) => other.id === change.parentId);
+    const allowed = parentsOf(bean.type);
+    if (parent?.id === id) return `${id} cannot be its own parent.`;
+    if (parent && allowed && !allowed.includes(parent.type)) return `A ${bean.type} cannot be under ${parent.id}, which is a ${parent.type}.`;
+    if (parent && descendantIds(beans, id).has(parent.id)) return `${parent.id} is below ${id}, so it cannot become its parent.`;
+  }
   if (change.kind === 'blocking' && change.action === 'add') {
     // `blocking` adds id -> target; `blocked-by` adds target -> id. A cycle appears when the new edge's end reaches its start.
     const [from, to] = change.field === 'blocking' ? [id, change.targetId] : [change.targetId, id];

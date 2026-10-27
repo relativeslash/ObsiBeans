@@ -118,6 +118,33 @@ export interface Notice {
   readonly ids: readonly string[];
 }
 
+/** One field set to one value on every target. Relationship and body edits are single-bean actions (TP-25). */
+export type BulkEdit =
+  | { readonly field: 'status' | 'type' | 'priority'; readonly value: string }
+  | { readonly field: 'parent'; readonly parentId: string | null };
+
+/**
+ * What happened to one target. `saved` and `unchanged` are final. `cancelled` never ran. `uncertain` may have been
+ * written: it is retried only after the user has compared the bean with the intent (`checked`).
+ */
+export type BulkItem =
+  | { readonly id: string; readonly kind: 'pending' | 'running' | 'saved' | 'unchanged' | 'cancelled' }
+  | { readonly id: string; readonly kind: 'failed'; readonly error: AdapterError }
+  | { readonly id: string; readonly kind: 'conflict'; readonly error: Extract<AdapterError, { kind: 'conflict' }> }
+  | { readonly id: string; readonly kind: 'uncertain'; readonly error: Extract<AdapterError, { kind: 'uncertain' }>; readonly checked: boolean }
+  /** Nothing ran: another save of the bean was pending or unreconciled, or the bean no longer exists. */
+  | { readonly id: string; readonly kind: 'skipped'; readonly reason: 'busy' | 'unreconciled' | 'unknown-bean' | 'disposed' };
+
+export interface BulkRun {
+  readonly edit: BulkEdit;
+  /** `cancelling`: no new bean starts; the one in flight still reports its real outcome. */
+  readonly phase: 'running' | 'cancelling' | 'done';
+  /** The targets as chosen when the run started, in that order. Selection changes later do not touch them. */
+  readonly items: readonly BulkItem[];
+  /** The last retry could not re-read the project, so it wrote nothing. */
+  readonly rereadFailed: boolean;
+}
+
 export interface ViewState {
   readonly scrollTop: number;
   readonly focusId: string | null;
@@ -148,4 +175,6 @@ export interface Snapshot {
   /** Drafts could not be written to plugin storage. */
   readonly draftsUnsaved: boolean;
   readonly notices: readonly Notice[];
+  /** The bulk edit being run or waiting to be reviewed; null when there is none. */
+  readonly bulk: BulkRun | null;
 }

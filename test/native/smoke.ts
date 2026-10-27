@@ -363,6 +363,10 @@ console.log(JSON.stringify({ beans: names().map((name) => { const { body, ...row
     check(await session.evaluate(`document.activeElement === document.querySelectorAll('.obsibeans-workspace button.row')[1]`), 'j moves focus to the next row');
     await session.evaluate(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }))`);
     check(await session.evaluate(`document.querySelector('.obsibeans-workspace .selection [role="status"]')?.textContent.includes('1 bean selected')`), 'Space selects the focused row');
+    check(
+      await session.evaluate(`(() => { const bar = document.querySelector('.obsibeans-workspace .bulk'); return !!bar && bar.textContent.includes('1 bean will be changed') && bar.querySelector('button.apply')?.disabled === true; })()`),
+      'the bulk bar names its one target and offers no apply until a value is chosen',
+    );
     await session.evaluate(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true }))`);
     check(await session.evaluate(`document.activeElement === document.querySelector('.obsibeans-workspace input[type="search"]')`), '/ focuses the search field');
     await session.evaluate(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))`);
