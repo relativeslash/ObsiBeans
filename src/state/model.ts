@@ -3,8 +3,8 @@ import type { ProjectRead } from '../adapter/beans-read.ts';
 import type { Change, NewBean } from '../adapter/beans-write.ts';
 import type { InvalidTaskFile } from '../adapter/task-root.ts';
 
-/** Re-exported so views can describe failures without importing the adapter. */
-export type { AdapterError };
+/** Re-exported so views can describe failures and build edits without importing the adapter. */
+export type { AdapterError, BeanSummary, Change };
 
 /** What the state layer needs from the Beans adapter. The plugin shell builds it from the adapter and the bound project. */
 export interface BeansPort {
@@ -33,6 +33,23 @@ export interface Filters {
 }
 
 export const DEFAULT_FILTERS: Filters = { search: '', statuses: [], types: [], priorities: [], tags: [], readiness: 'any' };
+
+/** `default` is the deterministic order of `orderBeans`; every other key breaks ties with it. */
+export const SORT_KEYS = ['default', 'id', 'title', 'status', 'type', 'priority', 'updated'] as const;
+export type SortKey = (typeof SORT_KEYS)[number];
+
+export interface Sort {
+  readonly key: SortKey;
+  readonly descending: boolean;
+}
+
+export const DEFAULT_SORT: Sort = { key: 'default', descending: false };
+
+/** One list row. A `context` row is an ancestor shown only for its matching descendants: not a match, never counted or selected implicitly. */
+export interface Row {
+  readonly bean: BeanSummary;
+  readonly context: boolean;
+}
 
 /** The two kinds of unsaved text the design recovers. */
 export type DraftKind = 'description' | 'creation';

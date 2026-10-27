@@ -129,7 +129,17 @@
         <div class="pane-nav"><Navigation active={current.nav} onSelect={selectNav} /></div>
       {/if}
       <div class="pane-list" hidden={!showList}>
-        <WorkList {project} {snapshot} active={showList} onOpen={openRow} onShowAll={() => { selectNav('all'); }} />
+        <WorkList
+          {project}
+          {snapshot}
+          active={showList}
+          columns={current.columns}
+          sort={current.sort}
+          onPrefs={(patch) => { commit({ ...current, ...patch }); }}
+          onOpen={openRow}
+          onShowAll={() => { selectNav('all'); }}
+          onReset={() => { project.setFilters(navFilters(current.nav)); }}
+        />
       </div>
       {#if !narrow}
         <!-- A focusable separator is a standard window splitter (WAI-ARIA APG). -->
