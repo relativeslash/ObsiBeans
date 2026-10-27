@@ -83,10 +83,30 @@ describe('plugin shell', () => {
       { id: 'open-sidebar', name: en['command.openSidebar'] },
       { id: 'refresh', name: en['command.refresh'] },
       { id: 'close-view', name: en['command.closeView'] },
+      { id: 'insert-link', name: en['command.insertLink'] },
+      { id: 'convert-selection', name: en['command.convertSelection'] },
     ]);
     expect(bridge<Plugin>(plugin).ribbon.map(({ icon, title }) => ({ icon, title }))).toEqual([{ icon: 'list-checks', title: en['command.openWorkspace'] }]);
     expect(shell.settingTabs).toHaveLength(1);
     expect(shell.settingTabs[0]).toBeInstanceOf(ObsiBeansSettingTab);
+  });
+
+  it('adds the note actions to the editor menu and tells followers when Obsidian has resolved links', async () => {
+    const { app, plugin } = await loadPlugin();
+    expect(app.workspace.handlers.map(({ name }) => name)).toEqual(['editor-menu']);
+    const listener = vi.fn();
+    plugin.onBindingChange(listener);
+
+    app.metadataCache.trigger('resolved');
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    // Without a bound project there is no bean file, hence no related notes, and a missing note does not open.
+    expect(plugin.relatedNotes('FX-aaaaa')).toEqual([]);
+    expect(await plugin.openNote('Notes/A.md')).toBe(false);
+    const addItem = vi.fn();
+    const editor = { getValue: () => '', getSelection: () => '', getCursor: () => ({ line: 0, ch: 0 }), posToOffset: () => 0 };
+    (app.workspace.handlers[0]?.callback as (...args: unknown[]) => void)({ addItem }, editor, { file: { path: 'A.md' } });
+    expect(addItem).not.toHaveBeenCalled();
   });
 
   it('opens one sidebar leaf and reveals it again instead of opening another', async () => {

@@ -118,6 +118,15 @@ export class Workspace {
     return this.leaves.filter((leaf) => leaf.view?.getViewType() === type);
   }
 
+  /** Test hook: the handlers registered with `on`, by event name. */
+  readonly handlers: EventRef[] = [];
+
+  on(name: string, callback: (...args: never[]) => unknown): EventRef {
+    const ref = { name, callback };
+    this.handlers.push(ref);
+    return ref;
+  }
+
   getLeaf(): WorkspaceLeaf {
     const leaf = new WorkspaceLeaf(this);
     this.leaves.push(leaf);
@@ -196,8 +205,54 @@ export class Vault {
 }
 
 export class FileManager {
-  generateMarkdownLink(file: Entry, sourcePath: string): string {
-    return `[[${file.path}]]${sourcePath}`;
+  /** Test hook: the `sourcePath` of every call. */
+  readonly sources: string[] = [];
+
+  generateMarkdownLink(file: Entry, sourcePath: string, _subpath?: string, alias?: string): string {
+    this.sources.push(sourcePath);
+    return `[[${file.path}${alias === undefined ? '' : `|${alias}`}]]`;
+  }
+}
+
+/** Only the part of the metadata cache the plugin reads, and a hook to raise its event. */
+export class MetadataCache {
+  /** Test hook: what Obsidian resolved, by source path and then target path. */
+  resolvedLinks: Record<string, Record<string, number>> = {};
+  private readonly refs = new Set<EventRef>();
+
+  on(name: string, callback: (...args: never[]) => unknown): EventRef {
+    const ref = { name, callback };
+    this.refs.add(ref);
+    return ref;
+  }
+
+  trigger(name: string): void {
+    for (const ref of [...this.refs]) if (ref.name === name) ref.callback();
+  }
+}
+
+/** A modal that opens and closes synchronously and draws into `contentEl`. */
+export class Modal {
+  readonly app: App;
+  readonly contentEl = document.createElement('div');
+  isOpen = false;
+
+  constructor(app: App) {
+    this.app = app;
+  }
+
+  onOpen(): void {}
+  onClose(): void {}
+
+  open(): void {
+    this.isOpen = true;
+    this.onOpen();
+  }
+
+  close(): void {
+    if (!this.isOpen) return;
+    this.isOpen = false;
+    this.onClose();
   }
 }
 
@@ -233,6 +288,7 @@ export const MarkdownRenderer = {
 export class App {
   readonly workspace = new Workspace();
   readonly fileManager = new FileManager();
+  readonly metadataCache = new MetadataCache();
   readonly vault: Vault;
 
   constructor(vaultRoot?: string) {

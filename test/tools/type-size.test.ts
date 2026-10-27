@@ -181,7 +181,8 @@ describe('type-size gate', () => {
     expect(report.failures).toHaveLength(1);
   });
 
+  // Parses every source file with the TypeScript compiler; under parallel coverage runs that exceeds the 5 s default.
   it('passes the real repository', () => {
     expect(checkTypeSizes(process.cwd()).failures).toEqual([]);
-  });
+  }, 30_000);
 });

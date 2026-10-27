@@ -34,6 +34,8 @@ async function open(made: Harness, layout: Layout = DEFAULT_LAYOUT) {
     renderMarkdown: () => () => undefined,
     openSource: () => Promise.resolve(true),
     sourceLink: () => undefined,
+    relatedNotes: () => [],
+    openNote: () => Promise.resolve(true),
   };
   const saved: Layout[] = [];
   const el = document.body.appendChild(document.createElement('div'));

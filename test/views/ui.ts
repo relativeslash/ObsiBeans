@@ -3,7 +3,7 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import type { AdapterError, Draft } from '../../src/state/model.ts';
 import { applyViewChange, type ViewChange, type ViewEntry, type ViewResult } from '../../src/state/saved-views.ts';
 import type { WorkspaceState } from '../../src/state/workspace-state.ts';
-import type { WorkspaceHost } from '../../src/views/host.ts';
+import type { RelatedNote, WorkspaceHost } from '../../src/views/host.ts';
 import { DEFAULT_LAYOUT, type Layout } from '../../src/views/layout.ts';
 import Workspace from '../../src/views/Workspace.svelte';
 import { A, B, bean, detail, type Harness } from '../state/support.ts';
@@ -95,6 +95,20 @@ export class TestHost implements WorkspaceHost {
 
   sourceLink(): string | undefined {
     return this.link;
+  }
+
+  /** What Obsidian reports as related; tests set it, then call `views.notify()` as the shell does after a change. */
+  notes: readonly RelatedNote[] = [];
+  noteFound = true;
+  readonly notesOpened: string[] = [];
+
+  relatedNotes(): readonly RelatedNote[] {
+    return this.notes;
+  }
+
+  openNote(path: string): Promise<boolean> {
+    this.notesOpened.push(path);
+    return Promise.resolve(this.noteFound);
   }
 }
 

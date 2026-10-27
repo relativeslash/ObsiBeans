@@ -10,8 +10,9 @@ import type { BeansPort, Draft } from '../state/model.ts';
 import { applyViewChange, loadViews, SCHEMA_VERSION, serializeViews, type ViewChange, type ViewEntry, type ViewResult } from '../state/saved-views.ts';
 import { WorkspaceState } from '../state/workspace-state.ts';
 import { t } from '../views/i18n.ts';
-import type { Density, WorkspaceHost } from '../views/host.ts';
+import type { Density, RelatedNote, WorkspaceHost } from '../views/host.ts';
 import { ISSUE_VIEW_TYPE, IssueView, SIDEBAR_VIEW_TYPE, SidebarView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../views/workspace-view.ts';
+import { NoteActions } from './notes.ts';
 import { parseSettings, type BindingState, type ObsiBeansSettings, type SettingsHost } from './settings.ts';
 import { describeBinding, ObsiBeansSettingTab } from './settings-tab.ts';
 
@@ -29,6 +30,11 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
   private schemaVersion = SCHEMA_VERSION;
   private drafts: readonly Draft[] = [];
   private writes: Promise<unknown> = Promise.resolve();
+  private readonly notes = new NoteActions(this.app, {
+    host: this,
+    taskRoot: () => (this.binding?.ok ? this.binding.value.taskRootInVault : undefined),
+    fileOf: (id) => this.sourceFile(id),
+  });
 
   override async onload(): Promise<void> {
     const stored = await this.loadData() as unknown;
@@ -45,7 +51,12 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
     this.addCommand({ id: 'open-sidebar', name: t('command.openSidebar'), callback: () => this.openSidebar() });
     this.addCommand({ id: 'refresh', name: t('command.refresh'), callback: () => void this.state?.refresh() });
     this.addCommand({ id: 'close-view', name: t('command.closeView'), checkCallback: (checking) => this.closeActiveView(checking) });
-    const { vault } = this.app;
+    this.addCommand({ id: 'insert-link', name: t('command.insertLink'), editorCheckCallback: (checking, editor, context) => this.notes.insertLink(checking, editor, context) });
+    this.addCommand({ id: 'convert-selection', name: t('command.convertSelection'), editorCheckCallback: (checking, editor, context) => this.notes.convertSelection(checking, editor, context) });
+    const { vault, workspace, metadataCache } = this.app;
+    this.registerEvent(workspace.on('editor-menu', (menu, editor, context) => { this.notes.addMenuItems(menu, editor, context); }));
+    // Obsidian resolves links in the background; open inspectors read them again when it is done.
+    this.registerEvent(metadataCache.on('resolved', () => { this.publish(); }));
     this.registerEvent(vault.on('create', (file) => { this.vaultChanged(file.path); }));
     this.registerEvent(vault.on('modify', (file) => { this.vaultChanged(file.path); }));
     this.registerEvent(vault.on('delete', (file) => { this.vaultChanged(file.path); }));
@@ -241,6 +252,14 @@ export default class ObsiBeansPlugin extends Plugin implements SettingsHost, Wor
   sourceLink(id: string): string | undefined {
     const file = this.sourceFile(id);
     return file ? this.app.fileManager.generateMarkdownLink(file, '') : undefined;
+  }
+
+  relatedNotes(id: string): readonly RelatedNote[] {
+    return this.notes.related(id);
+  }
+
+  openNote(path: string): Promise<boolean> {
+    return this.notes.openNote(path);
   }
 
   renderMarkdown(markdown: string, el: HTMLElement, id: string): () => void {
