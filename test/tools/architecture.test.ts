@@ -97,7 +97,8 @@ describe('architecture gate', () => {
     expect(checkArchitecture(project({}))).toEqual(['No production sources under src/']);
   });
 
+  // Scans every source file; the default 5 s is too tight for a CI runner that also collects coverage.
   it('passes the real repository', () => {
     expect(checkArchitecture(process.cwd())).toEqual([]);
-  });
+  }, 30_000);
 });
