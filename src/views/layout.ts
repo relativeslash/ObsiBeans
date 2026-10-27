@@ -1,4 +1,5 @@
 import { DEFAULT_SORT, SORT_KEYS, type Sort } from '../state/model.ts';
+import type { Swimlanes } from '../state/board.ts';
 import { parseNavId, type NavId } from '../state/navigation.ts';
 
 /** Optional list columns, in display order. The title is always shown. */
@@ -11,13 +12,17 @@ export interface Layout {
   readonly nav: NavId;
   readonly columns: readonly ColumnId[];
   readonly sort: Sort;
+  /** The work view's representation. Hierarchy is added with its own view. */
+  readonly view: 'list' | 'board';
+  /** Board grouping. Per workspace tab, like the rest of the layout. */
+  readonly swimlanes: Swimlanes;
   /** Inspector width in pixels while the pane is wide. */
   readonly inspectorWidth: number;
 }
 
 export const INSPECTOR_MIN = 240;
 export const INSPECTOR_MAX = 720;
-export const DEFAULT_LAYOUT: Layout = { nav: 'all', columns: DEFAULT_COLUMNS, sort: DEFAULT_SORT, inspectorWidth: 360 };
+export const DEFAULT_LAYOUT: Layout = { nav: 'all', columns: DEFAULT_COLUMNS, sort: DEFAULT_SORT, view: 'list', swimlanes: 'none', inspectorWidth: 360 };
 
 export const clampWidth = (width: number): number => Math.min(INSPECTOR_MAX, Math.max(INSPECTOR_MIN, Math.round(width)));
 
@@ -32,6 +37,8 @@ export function parseLayout(value: unknown): Layout {
     // An empty list is a valid choice (title only); only a missing or non-list value falls back.
     columns: Array.isArray(columns) ? COLUMN_IDS.filter((id) => columns.includes(id)) : DEFAULT_COLUMNS,
     sort: { key: SORT_KEYS.find((key) => key === sort.key) ?? DEFAULT_SORT.key, descending: sort.descending === true },
+    view: stored.view === 'board' ? 'board' : 'list',
+    swimlanes: stored.swimlanes === 'parent' ? 'parent' : 'none',
     inspectorWidth: typeof width === 'number' && Number.isFinite(width) ? clampWidth(width) : DEFAULT_LAYOUT.inspectorWidth,
   };
 }

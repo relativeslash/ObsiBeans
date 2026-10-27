@@ -1,13 +1,13 @@
 ---
 # OB-q9nz
 title: Build the status board with accessible card movement
-status: todo
+status: in-progress
 type: feature
 priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-26T02:01:30Z
+updated_at: 2026-10-27T09:46:27Z
 parent: OB-lb80
 blocked_by:
     - OB-7a9z
@@ -29,11 +29,11 @@ Add a board over the same filters, selection and action layer. Columns use the f
 
 ## Acceptance criteria
 
-- [ ] Render draft, todo, in-progress, completed and scrapped columns with deterministic stable sorting and correct filtered counts.
-- [ ] Cross-status movement and equivalent keyboard/visible Move action use shared mutations and converge with list/inspector.
-- [ ] Pending/failure/conflict paths restore or reconcile card position without falsely reporting a saved move.
-- [ ] Switching views preserves selected bean and shared filters; contextual ancestors and swimlane headers cannot become implicit bulk targets.
-- [ ] Per-view parent swimlanes group cards by direct parent plus a No parent lane in deterministic order; cross-lane drag is rejected and never changes a parent.
+- [x] Render draft, todo, in-progress, completed and scrapped columns with deterministic stable sorting and correct filtered counts.
+- [x] Cross-status movement and equivalent keyboard/visible Move action use shared mutations and converge with list/inspector.
+- [x] Pending/failure/conflict paths restore or reconcile card position without falsely reporting a saved move.
+- [x] Switching views preserves selected bean and shared filters; contextual ancestors and swimlane headers cannot become implicit bulk targets.
+- [x] Per-view parent swimlanes group cards by direct parent plus a No parent lane in deterministic order; cross-lane drag is rejected and never changes a parent.
 
 ## Verification
 
@@ -42,3 +42,10 @@ Test every status transition, drag cancellation, keyboard alternative, rejected/
 ## Handoff
 
 Provide board parity evidence, including swimlane behavior. Update affected documentation with verified facts and append a Summary of Changes with commands, results, limitations, and follow-up bean IDs. Do not complete with unchecked acceptance items or unreported required verification gaps.
+
+## Progress
+
+- Implemented `src/state/board.ts` (columns, filtered counts, lanes), `src/views/Board.svelte`, and a List/Board switch plus "Group by parent" in the list controls; `view` and `swimlanes` are saved in the workspace layout. The board renders inside `WorkList`, so filters, selection, bulk bar, banners and the mutation path are shared.
+- Fixed a defect found on the way: any layout change replaced `current` and re-applied the navigation filters, so switching view would have reset the user's filters. `Workspace.svelte` now reads the navigation entry through a derived value.
+- Evidence: `yarn verify` passes; tests in `test/state/board.test.ts` and `test/views/board.test.ts` cover status transitions, drag and cancelled drag, the Move select, pending/failure/conflict, same-column drop, cross-lane rejection and view switching.
+- Still open before completion: verify light/dark and narrow layouts in a real Obsidian (needs a desktop session), then append the Summary of Changes.

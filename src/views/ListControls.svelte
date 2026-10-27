@@ -10,11 +10,13 @@
     snapshot: Snapshot;
     columns: Layout['columns'];
     sort: Layout['sort'];
-    onPrefs: (patch: Partial<Pick<Layout, 'columns' | 'sort'>>) => void;
+    view: Layout['view'];
+    swimlanes: Layout['swimlanes'];
+    onPrefs: (patch: Partial<Pick<Layout, 'columns' | 'sort' | 'view' | 'swimlanes'>>) => void;
     /** Back to the filters of the current navigation entry. */
     onReset: () => void;
   }
-  let { project, snapshot, columns, sort, onPrefs, onReset }: Props = $props();
+  let { project, snapshot, columns, sort, view, swimlanes, onPrefs, onReset }: Props = $props();
 
   let search: HTMLInputElement | undefined = $state();
   let filtersOpen = $state(false);
@@ -64,6 +66,17 @@
 </script>
 
 <div class="controls">
+  <div class="line" role="group" aria-label={t('view.label')}>
+    {#each ['list', 'board'] as const as one (one)}
+      <button type="button" aria-pressed={view === one} onclick={() => { onPrefs({ view: one }); }}>{t(`view.${one}`)}</button>
+    {/each}
+    {#if view === 'board'}
+      <label>
+        <input type="checkbox" checked={swimlanes === 'parent'} onchange={(event) => { onPrefs({ swimlanes: event.currentTarget.checked ? 'parent' : 'none' }); }} />
+        {t('board.swimlanes')}
+      </label>
+    {/if}
+  </div>
   <div class="line">
     <input
       bind:this={search}
@@ -109,6 +122,7 @@
       </select>
     </label>
     <button type="button" aria-pressed={sort.descending} onclick={() => { onPrefs({ sort: { ...sort, descending: !sort.descending } }); }}>{t('list.sort.descending')}</button>
+    {#if view === 'list'}
     <details class="columns">
       <summary>{t('list.columns')}</summary>
       <div class="menu">
@@ -124,6 +138,7 @@
         {/each}
       </div>
     </details>
+    {/if}
   </div>
 
   <div class="line selection">

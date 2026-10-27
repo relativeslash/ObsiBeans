@@ -43,9 +43,11 @@
   const showDetails = $derived(narrow && (detailOpen || creating) && !navOpen);
   const showList = $derived(!narrow || (!navOpen && !detailOpen && !creating));
 
+  // Read through a derived value: other layout changes (view, sort) replace `current` but must not reset the filters.
+  const nav = $derived(current.nav);
   // The navigation entry is the filter. Re-apply it whenever it changes or a new project state replaces the old one.
   $effect(() => {
-    project?.setFilters(navFilters(current.nav));
+    project?.setFilters(navFilters(nav));
   });
 
   function commit(next: Layout): void {
@@ -153,6 +155,8 @@
           active={showList}
           columns={current.columns}
           sort={current.sort}
+          view={current.view}
+          swimlanes={current.swimlanes}
           onPrefs={(patch) => { commit({ ...current, ...patch }); }}
           onOpen={openRow}
           onShowAll={() => { selectNav('all'); }}
