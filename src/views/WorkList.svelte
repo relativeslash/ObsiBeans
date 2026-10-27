@@ -6,6 +6,7 @@
   import { describeError } from './errors.ts';
   import Board from './Board.svelte';
   import BulkBar from './BulkBar.svelte';
+  import Hierarchy from './Hierarchy.svelte';
   import { t } from './i18n.ts';
   import type { Layout } from './layout.ts';
   import ListControls from './ListControls.svelte';
@@ -24,10 +25,12 @@
     onShowAll: () => void;
     /** Opens the creation form (the TUI's `c`). */
     onCreate?: (() => void) | undefined;
+    /** Opens the creation form with this parent filled in (hierarchy rows). */
+    onNewChild?: ((parentId: string) => void) | undefined;
     /** Back to the filters of the current navigation entry. */
     onReset: () => void;
   }
-  let { project, snapshot, active, columns, sort, view, swimlanes, onPrefs, onOpen, onShowAll, onReset, onCreate }: Props = $props();
+  let { project, snapshot, active, columns, sort, view, swimlanes, onPrefs, onOpen, onShowAll, onReset, onCreate, onNewChild }: Props = $props();
 
   /** Scroll and focus are remembered per representation, so switching back lands where the user left. */
   const viewKey = $derived(`workspace-${view}`);
@@ -35,6 +38,8 @@
   let controls: ListControls | undefined = $state();
   let wasActive = true;
   let pendingG = false;
+  /** Open/closed parents in the hierarchy by full bean ID; kept here so switching views does not forget them. */
+  let expanded = $state<ReadonlyMap<string, boolean>>(new Map());
 
   type Field = 'status' | 'type' | 'priority';
   const LISTS = { status: 'statuses', type: 'types', priority: 'priorities' } as const;
@@ -183,6 +188,8 @@
       overwrite={(id) => (attempts.has(id) ? (revision) => { overwrite(id, revision, attempts.get(id) ?? { kind: 'fields' }); } : undefined)}
       onFocus={remember}
     />
+  {:else if view === 'hierarchy'}
+    <Hierarchy {project} {snapshot} {sort} bind:expanded {onOpen} {onNewChild} onFocus={remember} />
   {:else}
     <ul class="rows" aria-label={t('list.label', { count: snapshot.visible.length })}>
       <!-- Keyed by file: two files can claim one ID, and a duplicate key would stop the whole view from rendering. -->

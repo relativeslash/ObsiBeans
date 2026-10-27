@@ -161,6 +161,7 @@
           onOpen={openRow}
           onShowAll={() => { selectNav('all'); }}
           onCreate={() => { startCreating(); }}
+          onNewChild={startCreating}
           onReset={() => { project.setFilters(navFilters(current.nav)); }}
         />
       </div>

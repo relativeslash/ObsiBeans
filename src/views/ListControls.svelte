@@ -3,7 +3,7 @@
   import { SORT_KEYS, type Snapshot, type SortKey } from '../state/model.ts';
   import type { WorkspaceState } from '../state/workspace-state.ts';
   import { t, type MessageKey } from './i18n.ts';
-  import { COLUMN_IDS, type Layout } from './layout.ts';
+  import { COLUMN_IDS, VIEWS, type Layout } from './layout.ts';
 
   interface Props {
     project: WorkspaceState;
@@ -67,7 +67,7 @@
 
 <div class="controls">
   <div class="line" role="group" aria-label={t('view.label')}>
-    {#each ['list', 'board'] as const as one (one)}
+    {#each VIEWS as one (one)}
       <button type="button" aria-pressed={view === one} onclick={() => { onPrefs({ view: one }); }}>{t(`view.${one}`)}</button>
     {/each}
     {#if view === 'board'}
