@@ -7,7 +7,7 @@ priority: normal
 tags:
     - v1
 created_at: 2026-10-26T01:45:43Z
-updated_at: 2026-10-27T03:13:58Z
+updated_at: 2026-10-27T03:18:50Z
 parent: OB-1bvb
 blocked_by:
     - OB-7a9z
@@ -70,3 +70,5 @@ Bulk status/type/priority/parent editing over the explicit selection, one indepe
 - Keyboard shortcuts for bulk apply (TUI `s`, `t`, `P`, `p` with a selection) are not added; the toolbar is the keyboard-accessible control.
 
 Follow-up: tracked relative symlinks `.obsidian/plugins/obsibeans/{main.js,styles.css,manifest.json}` point at `../../../dist/*` and `../../../manifest.json`, and `obsibeans` is enabled in `community-plugins.json`. They dangle until `yarn build` has run (verified: `yarn verify` passes with `dist/` absent); the build output itself stays untracked.
+
+Update: the release-binary tests, including `bulk-release.test.ts`, also pass against the audited 0.4.2 release (binary SHA-256 `a96444ff...e94307` checked): `OBSIBEANS_BEANS_RELEASE=<binary> yarn verify` ran 454 of 454 tests with none skipped. The earlier limitation about only a `dev` build no longer applies.
