@@ -473,6 +473,57 @@ describe('narrow panes', () => {
     expect(document.activeElement).toBe(ui.el.querySelector(`[data-id="${B}"]`));
   });
 
+  it('moves focus into the details, and Escape goes back to the row that was open', async () => {
+    paneWidth = 500;
+    const { ui } = await bound();
+    await resize(500);
+    const row = ui.el.querySelector<HTMLElement>(`[data-id="${B}"]`);
+    row?.focus();
+    row?.click();
+    await tick();
+    await tick();
+    expect(ui.el.querySelector('.pane-detail')?.contains(document.activeElement)).toBe(true);
+
+    document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await tick();
+    await tick();
+    expect(ui.el.querySelector('.pane-list')?.hasAttribute('hidden')).toBe(false);
+    expect(document.activeElement).toBe(ui.el.querySelector(`[data-id="${B}"]`));
+    expect(ui.el.querySelector('.obsibeans-workspace')).not.toBeNull();
+  });
+
+  it('shows the pane a palette action needs, so no action is lost in a narrow pane', async () => {
+    paneWidth = 500;
+    const { ui } = await bound();
+    await resize(500);
+    await vi.waitFor(() => { expect(ui.view.can('search')).toBe(true); });
+    ui.el.querySelector<HTMLElement>(`[data-id="${B}"]`)?.click();
+    await tick();
+    expect(ui.el.querySelector('.pane-list')?.hasAttribute('hidden')).toBe(true);
+
+    ui.view.run('search');
+    await tick();
+    await tick();
+    expect(ui.el.querySelector('.pane-list')?.hasAttribute('hidden')).toBe(false);
+    expect(document.activeElement).toBe(ui.el.querySelector('input[type="search"]'));
+
+    ui.view.run('status');
+    await tick();
+    await tick();
+    expect(ui.el.querySelector('.pane-list')?.hasAttribute('hidden')).toBe(true);
+    expect(document.activeElement).toBe(ui.el.querySelector(`#field-status-${B}`));
+  });
+
+  it('opens the views pane with focus inside and keeps the toolbar reachable', async () => {
+    paneWidth = 500;
+    const { ui } = await bound();
+    await resize(500);
+    await ui.press(en['action.views']);
+    await tick();
+    expect(ui.el.querySelector('.pane-nav')?.contains(document.activeElement)).toBe(true);
+    for (const label of [en['create.open'], en['action.refresh'], en['action.help'], en['action.close']]) expect(ui.button(label)).toBeTruthy();
+  });
+
   it('widens back out to three panes', async () => {
     paneWidth = 500;
     const { ui } = await bound();

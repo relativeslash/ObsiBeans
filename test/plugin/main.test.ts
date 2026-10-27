@@ -6,9 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BindingDiagnostic } from '../../src/adapter/binding.ts';
 import ObsiBeansPlugin from '../../src/plugin/main.ts';
 import { describeBinding, ObsiBeansSettingTab } from '../../src/plugin/settings-tab.ts';
+import { ACTIONS } from '../../src/views/actions.ts';
 import { en } from '../../src/views/messages.en.ts';
 import { ISSUE_VIEW_TYPE, IssueView, SIDEBAR_VIEW_TYPE, SidebarView, WORKSPACE_VIEW_TYPE, WorkspaceView } from '../../src/views/workspace-view.ts';
-import { App, bridge, type Plugin, type PluginSettingTab, WorkspaceLeaf } from '../support/obsidian.ts';
+import { App, bridge, type ItemView, type Plugin, type PluginSettingTab, WorkspaceLeaf } from '../support/obsidian.ts';
 import { makeProject, makeSandbox, trust, writeFakeBeans, type Sandbox } from '../support/project.ts';
 
 let sandbox: Sandbox;
@@ -83,6 +84,7 @@ describe('plugin shell', () => {
       { id: 'open-sidebar', name: en['command.openSidebar'] },
       { id: 'refresh', name: en['command.refresh'] },
       { id: 'close-view', name: en['command.closeView'] },
+      ...ACTIONS.map((action) => ({ id: `action-${action}`, name: en[`command.${action}`] })),
       { id: 'insert-link', name: en['command.insertLink'] },
       { id: 'convert-selection', name: en['command.convertSelection'] },
     ]);
@@ -163,6 +165,32 @@ describe('issue tabs and closing', () => {
     expect(app.workspace.getLeavesOfType(WORKSPACE_VIEW_TYPE)).toHaveLength(1);
     app.workspace.activeLeaf = new WorkspaceLeaf(app.workspace);
     expect(close?.checkCallback?.(true)).toBe(false);
+  });
+
+  it('offers each action command only while a Beans view that supports it is active, and runs it there', async () => {
+    const { app, shell, plugin } = await loadPlugin();
+    await plugin.openWorkspace();
+    await plugin.openIssue('OB-aaaa');
+    const command = (action: string) => shell.commands.find((one) => one.id === `action-${action}`);
+    const [workspace] = app.workspace.getLeavesOfType(WORKSPACE_VIEW_TYPE);
+    const [issue] = app.workspace.getLeavesOfType(ISSUE_VIEW_TYPE);
+    // The views register their actions once Svelte has mounted them.
+    await vi.waitFor(() => { expect((issue?.view as unknown as IssueView).can('help')).toBe(true); });
+
+    app.workspace.activeLeaf = new WorkspaceLeaf(app.workspace);
+    expect(ACTIONS.some((action) => command(action)?.checkCallback?.(true))).toBe(false);
+
+    app.workspace.activeLeaf = workspace;
+    expect(ACTIONS.every((action) => command(action)?.checkCallback?.(true))).toBe(true);
+
+    app.workspace.activeLeaf = issue;
+    expect(command('help')?.checkCallback?.(true)).toBe(true);
+    expect(command('status')?.checkCallback?.(true)).toBe(true);
+    expect(command('new')?.checkCallback?.(true)).toBe(false);
+    expect(command('viewBoard')?.checkCallback?.(true)).toBe(false);
+
+    expect(command('help')?.checkCallback?.(false)).toBe(true);
+    await vi.waitFor(() => { expect(bridge<ItemView>(issue?.view).contentEl.querySelector('[role="dialog"]')).not.toBeNull(); });
   });
 
   it('tells views about setting changes, so density applies at once', async () => {

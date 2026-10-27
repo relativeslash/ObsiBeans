@@ -50,7 +50,7 @@ describe('creating a bean', () => {
     expect(ui.drafts()).toEqual([]);
   });
 
-  it('submits with Enter and cancels with Escape', async () => {
+  it('submits with Enter, and leaves with Escape from any field while keeping what was typed', async () => {
     const ui = await open(await loaded(beans()));
     await ui.toolbar(en['create.open']);
     await ui.text(form(ui).title, 'By keyboard');
@@ -60,10 +60,16 @@ describe('creating a bean', () => {
     expect(ui.port.creations[0]?.args).toEqual([{ title: 'By keyboard' }]);
     await answerCreation(ui, rejection);
 
-    ui.key(form(ui).title, 'a');
     ui.key(form(ui).title, 'Escape');
     await settle();
     expect(ui.el.querySelector('#create-title')).toBeNull();
+    expect(ui.drafts()).toHaveLength(1);
+
+    // The draft comes back, and only the Cancel button discards it.
+    await ui.toolbar(en['create.open']);
+    expect(form(ui).title.value).toBe('By keyboard');
+    ui.buttonIn('.create', en['create.cancel']).click();
+    await settle();
     expect(ui.drafts()).toEqual([]);
   });
 

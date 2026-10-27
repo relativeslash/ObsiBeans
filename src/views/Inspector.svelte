@@ -3,6 +3,7 @@
   import { relationsOf } from '../state/navigation.ts';
   import { canHaveChildren } from '../state/relations.ts';
   import type { WorkspaceState } from '../state/workspace-state.ts';
+  import { DETAIL_KEYS, isText, type ActionId } from './actions.ts';
   import Description from './Description.svelte';
   import Fields from './Fields.svelte';
   import type { WorkspaceHost } from './host.ts';
@@ -24,8 +25,10 @@
     onOpenTab?: (() => void) | undefined;
     /** Opens the creation form with this bean as the parent. */
     onNewChild?: ((parentId: string) => void) | undefined;
+    /** Opens the shortcut help (`?`). */
+    onHelp: () => void;
   }
-  let { host, project, snapshot, id, onOpen, onBack, onOpenTab, onNewChild }: Props = $props();
+  let { host, project, snapshot, id, onOpen, onBack, onOpenTab, onNewChild, onHelp }: Props = $props();
 
   let fields: Fields | undefined = $state();
   let description: Description | undefined = $state();
@@ -55,24 +58,30 @@
     note = (await host.openSource(id ?? '')) ? '' : t('source.missing');
   }
 
-  const isText = (target: HTMLElement): boolean => target.matches('input:not([type="checkbox"]), select, textarea') || target.isContentEditable;
+  /** One bean action. The keys, the palette commands and the visible controls all come through here. Without a bean only help works. */
+  export function run(action: ActionId): void {
+    if (action === 'help') return onHelp();
+    if (!bean) return;
+    if (action === 'status' || action === 'type' || action === 'priority') fields?.focus(action);
+    else if (action === 'edit') description?.edit();
+    else if (action === 'parent') parent?.open();
+    else if (action === 'blocks') links?.openBlocks();
+    else if (action === 'copy') void copy(bean.id, t('copy.done', { count: 1 }));
+    else if (action === 'openSource') void openSource();
+    else if (action === 'copyLink') void copy(host.sourceLink(bean.id), t('copy.linkDone'));
+  }
 
-  /** The TUI's detail keys that this view supports: `s`, `t`, `P` pick a field, `e` edits the description, `p` picks the parent, `b` picks a bean to block, `y` copies the ID. */
+  /** The TUI's detail keys (see `DETAIL_KEYS`), plus Escape for going back. Open pickers stop Escape themselves. */
   function onKey(event: KeyboardEvent): void {
-    if (!bean || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || isText(event.target as HTMLElement)) return;
-    const handlers: Record<string, () => unknown> = {
-      s: () => fields?.focus('status'),
-      t: () => fields?.focus('type'),
-      P: () => fields?.focus('priority'),
-      e: () => description?.edit(),
-      p: () => parent?.open(),
-      b: () => links?.openBlocks(),
-      y: () => copy(bean.id, t('copy.done', { count: 1 })),
-    };
-    const handler = handlers[event.key];
-    if (!handler) return;
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || isText(event.target as HTMLElement)) return;
+    if (event.key === 'Escape' && onBack) {
+      event.preventDefault();
+      return onBack();
+    }
+    const action = DETAIL_KEYS[event.key];
+    if (!action) return;
     event.preventDefault();
-    void handler();
+    run(action);
   }
 
   const when = (iso: string): string => iso.replace('T', ' ').replace(/:\d\dZ$/, ' UTC');
@@ -86,9 +95,9 @@
       {#if onBack}<button type="button" onclick={onBack}>{t('action.back')}</button>{/if}
       {#if onOpenTab}<button type="button" onclick={onOpenTab}>{t('action.openTab')}</button>{/if}
       {#if bean}
-        <button type="button" onclick={() => void openSource()}>{t('action.openSource')}</button>
-        <button type="button" onclick={() => void copy(bean.id, t('copy.done', { count: 1 }))}>{t('copy.current')}</button>
-        <button type="button" onclick={() => void copy(host.sourceLink(bean.id), t('copy.linkDone'))}>{t('action.copyLink')}</button>
+        <button type="button" onclick={() => { run('openSource'); }}>{t('action.openSource')}</button>
+        <button type="button" onclick={() => { run('copy'); }}>{t('copy.current')}</button>
+        <button type="button" onclick={() => { run('copyLink'); }}>{t('action.copyLink')}</button>
       {/if}
     </div>
     <p class="note" role="status">{note}</p>

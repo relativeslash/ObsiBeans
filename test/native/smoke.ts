@@ -332,6 +332,34 @@ console.log(JSON.stringify({ beans: names().map((name) => { const { body, ...row
     await session.waitFor(`!!document.querySelector('.obsibeans-workspace.narrow') || !!document.querySelector('.narrow')`, 'the pane to collapse');
     check(await session.evaluate(`!document.querySelector('.narrow nav') && !document.querySelector('.narrow .splitter')`), 'a narrow pane collapses navigation and the splitter');
     await screenshot('workspace-narrow');
+    // Narrow keyboard walkthrough: the toolbar wraps instead of clipping, details take focus, Escape goes back to the row.
+    check(
+      await session.evaluate(`(() => { const root = document.querySelector('.obsibeans-workspace').getBoundingClientRect(); return [...document.querySelectorAll('.obsibeans-workspace .toolbar button')].every((button) => { const box = button.getBoundingClientRect(); return box.width > 0 && box.right <= root.right + 1; }); })()`),
+      'every toolbar action stays on screen in a narrow pane',
+    );
+    // The sandbox window has no OS focus, so Chromium does not fire focus events for focus(); send the one the row listens for.
+    await session.evaluate(`(() => { const row = document.querySelector('.obsibeans-workspace button.row'); row.focus(); row.dispatchEvent(new FocusEvent('focus')); row.click(); })()`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .pane-detail')?.contains(document.activeElement)`, 'focus to move into the details');
+    await session.evaluate(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .pane-list')?.hidden === false && document.activeElement?.matches('.obsibeans-workspace button.row')`, 'Escape to go back to the focused row');
+    check(true, 'narrow details take focus and Escape returns to the row');
+    // Zoom: at 200% the pane is narrower in CSS pixels, so the same layout rules apply and nothing overflows sideways.
+    await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.contentEl.style.width = ''`);
+    await session.evaluate(`window.require('electron').webFrame.setZoomFactor(2)`);
+    await session.waitFor(`!!document.querySelector('.obsibeans-workspace.narrow')`, 'the pane to turn narrow at 200% zoom');
+    check(
+      await session.evaluate(`(() => { const root = document.querySelector('.obsibeans-workspace'); return root.scrollWidth <= root.clientWidth + 1 && [...root.querySelectorAll('.toolbar button')].every((button) => button.getBoundingClientRect().right <= root.getBoundingClientRect().right + 1); })()`),
+      'at 200% zoom the workspace does not overflow sideways and keeps its toolbar',
+    );
+    check(
+      await session.evaluate(`(() => { const list = document.querySelector('.obsibeans-workspace .list').getBoundingClientRect(); const status = document.querySelector('.obsibeans-workspace footer').getBoundingClientRect(); const pane = document.querySelector('.obsibeans-workspace .pane').getBoundingClientRect(); return list.height >= 100 && pane.bottom <= status.top + 1; })()`),
+      'at 200% zoom the list keeps room and the controls do not run over the status bar',
+    );
+    await screenshot('workspace-zoom-200');
+    await session.evaluate(`window.require('electron').webFrame.setZoomFactor(1)`);
+    await session.waitFor(`!document.querySelector('.narrow')`, 'the pane to expand after zooming back');
+    await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.contentEl.style.width = '500px'`);
+    await session.waitFor(`!!document.querySelector('.obsibeans-workspace.narrow')`, 'the pane to collapse again');
     await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.contentEl.style.width = ''`);
     await session.waitFor(`!document.querySelector('.narrow')`, 'the pane to expand again');
 
@@ -548,6 +576,47 @@ console.log(JSON.stringify({ beans: names().map((name) => { const { body, ...row
     await session.waitFor(`${rowCount} === 2002`, 'Escape to clear the search');
     // The files stay: deleting two thousand files at once makes Obsidian's own file watcher report read errors for them.
     await session.evaluate(`app.plugins.plugins[${id}].state.clearSelection()`);
+
+    // Keyboard parity in the real app (OB-363m): jumps, layered Escape, help with focus return, and the palette commands.
+    const keyOn = (key: string): string => `document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(key)}, bubbles: true, cancelable: true }))`;
+    const rowIndex = `[...document.querySelectorAll('.obsibeans-workspace button.row')].indexOf(document.activeElement)`;
+    await session.evaluate(`document.querySelector('.obsibeans-workspace button.row').focus()`);
+    await session.evaluate(keyOn('End'));
+    check(await session.evaluate(`${rowIndex} === ${rowCount} - 1`), 'End jumps to the last row');
+    await session.evaluate(keyOn('Home'));
+    check(await session.evaluate(`${rowIndex} === 0`), 'Home jumps to the first row');
+    await session.evaluate(keyOn('PageDown'));
+    const paged = await session.evaluate(rowIndex);
+    const fit = await session.evaluate(`(() => { const list = document.querySelector('.obsibeans-workspace .list'); const row = document.querySelector('.obsibeans-workspace button.row'); return [list.clientHeight, row.getBoundingClientRect().height, Math.floor(list.clientHeight / row.getBoundingClientRect().height)]; })()`);
+    console.log(`INFO Page Down moved ${String(paged)} rows; list height, row height, rows that fit: ${JSON.stringify(fit)}`);
+    check(Array.isArray(fit) && fit[2] === paged, 'Page Down moves by the number of rows that fit the list');
+    await session.evaluate(keyOn('PageUp'));
+    check(await session.evaluate(`${rowIndex} === 0`), 'Page Up moves back up by the same amount');
+    await session.evaluate(keyOn(' '));
+    await session.evaluate(`app.plugins.plugins[${id}].state.setFilters({ search: 'bulk' })`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .selection [role="status"]')?.textContent.includes('1 bean selected')`, 'one selected bean');
+    await session.evaluate(`document.querySelectorAll('.obsibeans-workspace button.row')[3].focus()`);
+    await session.evaluate(keyOn('Escape'));
+    check(await session.evaluate(`app.plugins.plugins[${id}].state.getSnapshot().selection.ids.length === 0 && app.plugins.plugins[${id}].state.getSnapshot().filters.search === 'bulk'`), 'Escape clears the selection first and keeps the search');
+    await session.evaluate(keyOn('Escape'));
+    check(await session.evaluate(`app.plugins.plugins[${id}].state.getSnapshot().filters.search === '' && !!document.querySelector('.obsibeans-workspace')`), 'the next Escape clears the search and nothing closes');
+    await session.evaluate(`document.querySelectorAll('.obsibeans-workspace button.row')[3].focus()`);
+    await session.evaluate(keyOn('?'));
+    check(await session.evaluate(`!!document.querySelector('.obsibeans-workspace [role="dialog"]') && document.querySelector('.obsibeans-workspace [role="dialog"]').contains(document.activeElement)`), '? opens the help with focus inside it');
+    await screenshot('help');
+    await session.evaluate(keyOn('Escape'));
+    check(await session.evaluate(`!document.querySelector('.obsibeans-workspace [role="dialog"]') && document.activeElement === document.querySelectorAll('.obsibeans-workspace button.row')[3]`), 'Escape closes the help and focus returns to the row');
+    await session.evaluate(`app.workspace.setActiveLeaf(app.workspace.getLeavesOfType('obsibeans-workspace')[0], { focus: true })`);
+    check(await session.evaluate(`['new','search','tags','copy','selectAll','clearSelection','viewList','viewBoard','viewHierarchy','status','type','priority','parent','blocks','edit','openSource','copyLink','back','help'].every((action) => !!app.commands.commands[${id} + ':action-' + action])`), 'every action is a command-palette command');
+    await session.evaluate(`app.commands.executeCommandById(${id} + ':action-viewHierarchy')`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace [aria-label="${en['hierarchy.label']}"]') !== null`, 'the palette command to show the hierarchy');
+    await session.evaluate(`app.commands.executeCommandById(${id} + ':action-viewList')`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace ul.rows:not([aria-label="${en['hierarchy.label']}"])') !== null`, 'the palette command to show the list again');
+    await session.evaluate(`app.commands.executeCommandById(${id} + ':action-search')`);
+    check(await session.evaluate(`document.activeElement === document.querySelector('.obsibeans-workspace input[type="search"]')`), 'the palette command focuses the search field');
+    await session.evaluate(`app.commands.executeCommandById(${id} + ':action-help')`);
+    check(await session.evaluate(`!!document.querySelector('.obsibeans-workspace [role="dialog"]')`), 'the palette command opens the help');
+    await session.evaluate(keyOn('Escape'));
 
     // Close view: the command closes only the active Beans tab; Obsidian keeps running.
     await session.evaluate(`app.workspace.setActiveLeaf(app.workspace.getLeavesOfType('obsibeans-issue')[0], { focus: true })`);

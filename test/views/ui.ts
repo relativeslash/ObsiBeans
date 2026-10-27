@@ -3,6 +3,7 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import type { AdapterError, Draft } from '../../src/state/model.ts';
 import { applyViewChange, type ViewChange, type ViewEntry, type ViewResult } from '../../src/state/saved-views.ts';
 import type { WorkspaceState } from '../../src/state/workspace-state.ts';
+import type { ActionPort } from '../../src/views/actions.ts';
 import type { RelatedNote, WorkspaceHost } from '../../src/views/host.ts';
 import { DEFAULT_LAYOUT, type Layout } from '../../src/views/layout.ts';
 import Workspace from '../../src/views/Workspace.svelte';
@@ -120,11 +121,11 @@ export const settle = async (): Promise<void> => {
 export const beans = () => [bean(A, { title: 'Alpha', tags: ['ui'] }), bean(B, { title: 'Beta' })];
 export const stored = (extra: Partial<Draft> = {}): Draft => ({ kind: 'description', key: A, text: 'Draft text', revision: `rev-${A}`, savedAt: '2026-10-26T20:00:00Z', ...extra });
 
-export async function open(made: Harness, views: readonly ViewEntry[] = [], layout: Layout = DEFAULT_LAYOUT) {
+export async function open(made: Harness, views: readonly ViewEntry[] = [], layout: Layout = DEFAULT_LAYOUT, port?: ActionPort) {
   const host = new TestHost(made.state);
   host.views.entries = views;
   const el = document.body.appendChild(document.createElement('div'));
-  mounts.push(mount(Workspace, { target: el, props: { host, layout, onLayout: () => undefined, onClose: () => undefined } }));
+  mounts.push(mount(Workspace, { target: el, props: { host, layout, onLayout: () => undefined, onClose: () => undefined, port } }));
   await tick();
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- the caller names the element type it expects
   const q = <T extends HTMLElement>(selector: string): T => {

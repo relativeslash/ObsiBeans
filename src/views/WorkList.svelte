@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
+  import { isText, LIST_KEYS, type ActionId } from './actions.ts';
   import { listRows } from '../state/filters.ts';
   import type { BeanSummary, Change, Snapshot } from '../state/model.ts';
   import type { WorkspaceState } from '../state/workspace-state.ts';
@@ -29,8 +30,10 @@
     onNewChild?: ((parentId: string) => void) | undefined;
     /** Back to the filters of the current navigation entry. */
     onReset: () => void;
+    /** Opens the shortcut help (`?`). */
+    onHelp: () => void;
   }
-  let { project, snapshot, active, columns, sort, view, swimlanes, onPrefs, onOpen, onShowAll, onReset, onCreate, onNewChild }: Props = $props();
+  let { project, snapshot, active, columns, sort, view, swimlanes, onPrefs, onOpen, onShowAll, onReset, onCreate, onNewChild, onHelp }: Props = $props();
 
   /** Scroll and focus are remembered per representation, so switching back lands where the user left. */
   const viewKey = $derived(`workspace-${view}`);
@@ -75,41 +78,61 @@
     void project.mutate(id, change, revision);
   };
 
-  const isText = (target: HTMLElement): boolean => target.matches('input:not([type="checkbox"]), select, textarea') || target.isContentEditable;
+  /** Escape clears one thing per press: the selection, then the tag filter, then the search text. It never closes anything. */
+  function clearOne(): boolean {
+    if (snapshot.selection.ids.length > 0) project.clearSelection();
+    else if (snapshot.filters.tags.length > 0) project.setFilters({ tags: [] });
+    else if (snapshot.filters.search !== '') project.setFilters({ search: '' });
+    else return false;
+    return true;
+  }
 
-  /** Familiar bindings (design: TUI parity), active only outside text fields. Every one has a visible control too. */
+  /** The palette's way in: the same actions as the keys and the visible controls. */
+  export function run(action: ActionId): void {
+    const views = { viewList: 'list', viewBoard: 'board', viewHierarchy: 'hierarchy' } as const;
+    if (action === 'new') onCreate?.();
+    else if (action === 'search') controls?.focusSearch();
+    else if (action === 'tags') controls?.focusTags();
+    else if (action === 'copy') void controls?.copy();
+    else if (action === 'selectAll') project.selectVisible();
+    else if (action === 'clearSelection') project.clearSelection();
+    else if (action in views) onPrefs({ view: views[action as keyof typeof views] });
+  }
+
+  /** Familiar bindings (design: TUI parity), active only outside text fields. Every one has a visible control and a command too. */
   function onKey(event: KeyboardEvent): void {
     const target = event.target as HTMLElement;
-    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || isText(target)) return;
     if (event.key === 'Escape') {
-      if (snapshot.selection.ids.length > 0) {
-        project.clearSelection();
-        event.preventDefault();
-      }
+      if (clearOne()) event.preventDefault();
       return;
     }
-    if (isText(target)) return;
     const armed = pendingG;
     pendingG = event.key === 'g';
-    if (armed && event.key === 't') return void controls?.focusTags();
-    if (event.key === '/') {
-      event.preventDefault();
-      return controls?.focusSearch();
-    }
-    if (event.key === 'y') return void controls?.copy();
-    if (event.key === 'c' && onCreate) return onCreate();
+    if (armed && event.key === 't') return run('tags');
+    const action = LIST_KEYS[event.key];
+    if (action === 'search' || action === 'help') event.preventDefault();
+    if (action === 'help') return onHelp();
+    if (action) return run(action);
     if (!target.matches('button.row')) return;
     const all = [...(scroller?.querySelectorAll<HTMLElement>('button.row') ?? [])];
     const at = all.indexOf(target);
-    const move = (delta: number): void => {
+    // A page is as many rows as fit; jsdom and hidden panes have no size, so fall back to ten.
+    const height = target.getBoundingClientRect().height;
+    const page = height > 0 && scroller ? Math.max(1, Math.floor(scroller.clientHeight / height)) : 10;
+    const move = (to: number): void => {
       event.preventDefault();
-      all[Math.min(all.length - 1, Math.max(0, at + delta))]?.focus();
+      all[Math.min(all.length - 1, Math.max(0, to))]?.focus();
     };
-    if (event.key === 'j' || event.key === 'ArrowDown') move(1);
-    else if (event.key === 'k' || event.key === 'ArrowUp') move(-1);
+    if (event.key === 'j' || event.key === 'ArrowDown') move(at + 1);
+    else if (event.key === 'k' || event.key === 'ArrowUp') move(at - 1);
+    else if (event.key === 'Home') move(0);
+    else if (event.key === 'End') move(all.length - 1);
+    else if (event.key === 'PageDown') move(at + page);
+    else if (event.key === 'PageUp') move(at - page);
     else if (event.key === ' ') {
       if (target.dataset.context === undefined) project.toggleSelected(target.dataset.id ?? '');
-      move(1);
+      move(at + 1);
     }
   }
 
@@ -257,8 +280,9 @@
 </div>
 
 <style>
-  .pane { display: flex; flex-direction: column; height: 100%; min-width: 0; }
-  .list { flex: 1; overflow-y: auto; min-width: 0; min-height: 0; }
+  /* At high zoom the controls could fill the pane and squeeze the list out: the list keeps a minimum height and the pane scrolls instead. */
+  .pane { display: flex; flex-direction: column; height: 100%; min-width: 0; overflow-y: auto; }
+  .list { flex: 1 1 12rem; overflow-y: auto; min-width: 0; min-height: 12rem; }
   .rows, .message ul { margin: 0; padding: 0; list-style: none; }
   .message { padding: var(--size-4-4); color: var(--text-muted); }
   .banner { display: flex; gap: var(--size-4-2); align-items: center; justify-content: space-between; margin: var(--size-4-2); padding: var(--size-4-2) var(--size-4-3); border-radius: var(--radius-s); background: var(--background-modifier-message); }

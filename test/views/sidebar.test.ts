@@ -36,6 +36,14 @@ describe('ready and in-progress sidebar', () => {
     expect(ui.el.textContent).toContain(en['status.connected']);
   });
 
+  it('names every row and list for assistive technology', async () => {
+    const ui = show(await loaded(data(), { readyIds: [B, C] }));
+    await tick();
+
+    for (const row of ui.el.querySelectorAll('button')) expect(row.textContent.trim(), row.outerHTML).not.toBe('');
+    for (const list of ui.el.querySelectorAll('ul')) expect(ui.el.querySelector(`#${list.getAttribute('aria-labelledby') ?? 'none'}`)?.textContent.trim()).toBeTruthy();
+  });
+
   it('keeps a bean the status says is todo out of Ready when the backend says it is blocked', async () => {
     const ui = show(await loaded(data(), { readyIds: [C], blockedIds: [B] }));
     await tick();

@@ -1,6 +1,6 @@
 ---
 created_at: 2026-10-26T02:32:50Z
-updated_at: 2026-10-26T02:32:50Z
+updated_at: 2026-10-27T19:59:38Z
 ---
 
 # Beans 0.4.2 TUI parity matrix
@@ -58,6 +58,23 @@ Test types:
 | TP-26 | A file watcher reloads the list after changes on disk. An open detail view reloads, or returns to the list if its bean was deleted. | Debounced vault-event refresh plus an explicit Refresh action; a deleted bean shows that it no longer exists | OB-os2h | Integration |
 | TP-27 | Columns adapt to width, and the preview disappears below 120 columns. | Responsive panes that keep all essential actions | OB-363m | Native window |
 | TP-28 | A load error replaces the list. Mutation errors are not shown; the code marks this as a TODO. | Distinct loading, empty, no-match, disconnected, invalid-data, pending, failed, and conflict states | OB-os2h | Unit, native window |
+
+## Keyboard review (OB-363m)
+
+Results of the keyboard and responsive review of rows TP-02 to TP-04, TP-08 to TP-10, TP-13 and TP-27, run on the implementation in the epic clone. Final confirmation of every row remains with [[docs/Private/Tasks/OB-zdg2--verify-baseline-compatibility-parity-and-failure-r.md|OB-zdg2]].
+
+| Row | Result |
+| --- | --- |
+| TP-02 | Arrow keys and `j`/`k` move focus along the rows in list, board and hierarchy. |
+| TP-03 | Page Up and Page Down move by the rows that fit the list. Letter paging keys (`h` `l` `u` `f` `d` `b`) are not bound. **Intentional difference, confirmed.** |
+| TP-04 | Home and End jump to the first and last row. `G` and the `g` chord's jump are not bound; `g t` stays the tag filter. |
+| TP-08 | Escape clears the selection, then the tag filter, then the search text, and then does nothing. Backspace is not bound. The creation form leaves on Escape and keeps its draft; the inspector's Escape goes back along the visited path and yields to text fields and pickers. |
+| TP-09 | No letter key acts inside a text field or select. Closing is the Close button and the `Close Beans view` command, which detach only the Beans tab; `q` and `ctrl+c` are not bound. |
+| TP-10 | `?`, the Help button and the `Show Beans keyboard help` command open a dialog generated from the key tables; Escape or `?` closes it and focus returns. Every action is a palette command (`action-<id>`) while a supporting Beans view is active. |
+| TP-13 | No per-section filter in the relationship lists. **Intentional difference, confirmed:** the sections stay short and the workspace search covers lookup. |
+| TP-27 | Below 760 px the panes stack. The toolbar wraps, Views and Back keep focus, a pane that opens takes focus, and scroll and the focused row survive. At 200% zoom the pane stacks too and scrolls as a whole instead of letting the controls cover the list. |
+
+Evidence: `test/views/keyboard.test.ts`, the narrow-pane cases in `test/views/workspace-view.test.ts`, the command registration in `test/plugin/main.test.ts` and the keyboard, narrow and zoom checks in `test/native/smoke.ts`.
 
 ## Outside TUI parity
 

@@ -56,14 +56,21 @@
 
   const defaultOf = (field: 'type' | 'status' | 'priority'): string => project.defaults[field];
   const onKey = (event: KeyboardEvent): void => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      void submit(false);
-    } else if (event.key === 'Escape') cancel();
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    void submit(false);
+  };
+  /** Escape leaves the form from any field and keeps what was typed as the creation draft; only Cancel discards it. */
+  const onEscape = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape' || event.defaultPrevented) return;
+    event.preventDefault();
+    onCancel();
   };
 </script>
 
-<section class="create" aria-labelledby="create-heading">
+<!-- Escape bubbles from the fields; the Cancel button is the visible equivalent. -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<section class="create" aria-labelledby="create-heading" onkeydown={onEscape}>
   <h2 id="create-heading">{t('create.title')}</h2>
   <div class="field">
     <label for="create-title">{t('create.field.title')}</label>
@@ -103,7 +110,7 @@
     <button type="button" onclick={cancel}>{t('create.cancel')}</button>
     <button type="button" aria-expanded={values.expanded} onclick={() => { values.expanded = !values.expanded; }}>{values.expanded ? t('create.less') : t('create.more')}</button>
   </div>
-  <p class="hint">{t('create.draftHint')}</p>
+  <p class="hint">{t('create.draftHint')} {t('create.escapeHint')}</p>
 </section>
 
 <style>
