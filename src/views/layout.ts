@@ -7,13 +7,16 @@ export const COLUMN_IDS = ['id', 'status', 'type', 'priority', 'tags', 'updated'
 export type ColumnId = (typeof COLUMN_IDS)[number];
 const DEFAULT_COLUMNS: readonly ColumnId[] = ['id', 'status', 'type', 'priority'];
 
+/** The work view representations, in switch order. */
+export const VIEWS = ['list', 'board', 'hierarchy'] as const;
+
 /** Saved with the workspace layout, so it survives restarts. */
 export interface Layout {
   readonly nav: NavId;
   readonly columns: readonly ColumnId[];
   readonly sort: Sort;
-  /** The work view's representation. Hierarchy is added with its own view. */
-  readonly view: 'list' | 'board';
+  /** The work view's representation. */
+  readonly view: (typeof VIEWS)[number];
   /** Board grouping. Per workspace tab, like the rest of the layout. */
   readonly swimlanes: Swimlanes;
   /** Inspector width in pixels while the pane is wide. */
@@ -37,7 +40,7 @@ export function parseLayout(value: unknown): Layout {
     // An empty list is a valid choice (title only); only a missing or non-list value falls back.
     columns: Array.isArray(columns) ? COLUMN_IDS.filter((id) => columns.includes(id)) : DEFAULT_COLUMNS,
     sort: { key: SORT_KEYS.find((key) => key === sort.key) ?? DEFAULT_SORT.key, descending: sort.descending === true },
-    view: stored.view === 'board' ? 'board' : 'list',
+    view: VIEWS.find((view) => view === stored.view) ?? 'list',
     swimlanes: stored.swimlanes === 'parent' ? 'parent' : 'none',
     inspectorWidth: typeof width === 'number' && Number.isFinite(width) ? clampWidth(width) : DEFAULT_LAYOUT.inspectorWidth,
   };

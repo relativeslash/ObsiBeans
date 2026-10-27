@@ -187,8 +187,8 @@ const vars = JSON.parse(args[args.indexOf('-v') + 1] || '{}');
 const names = () => fs.readdirSync('Task root').filter((name) => name.endsWith('.md'));
 const read = (name) => {
   const text = fs.readFileSync('Task root/' + name, 'utf8');
-  return { id: name.split('--')[0], slug: 'x', path: name, title: /^title: (.*)$/m.exec(text)?.[1] ?? '', status: 'todo', type: 'task', priority: 'normal', tags: [],
-    createdAt: '', updatedAt: '', parentId: null, blockingIds: [], blockedByIds: [], blockedBy: [], children: [],
+  return { id: name.split('--')[0], slug: 'x', path: name, title: /^title: (.*)$/m.exec(text)?.[1] ?? '', status: 'todo', type: /^type: (.*)$/m.exec(text)?.[1] ?? 'task', priority: 'normal', tags: [],
+    createdAt: '', updatedAt: '', parentId: /^parent: (.*)$/m.exec(text)?.[1] ?? null, blockingIds: [], blockedByIds: [], blockedBy: [], children: [],
     body: NL + (text.split('---' + NL)[2] ?? '').trimEnd() };
 };
 if (query.includes('createBean')) {
@@ -356,6 +356,41 @@ console.log(JSON.stringify({ beans: names().map((name) => { const { body, ...row
     await session.evaluate(`${buttonByText('.obsibeans-workspace .controls', en['view.list'])}.click()`);
     await session.waitFor(`!!document.querySelector('.obsibeans-workspace ul.rows') && !document.querySelector('.obsibeans-workspace .board')`, 'the list to return');
     check(true, 'switching back shows the list again');
+
+    // Hierarchy: an epic with a child, opened with the keyboard in the real app; the two files are removed again afterwards.
+    writeFileSync(join(vault, 'Task root', 'FX-hier1--epic.md'), '---\ntitle: Native epic\ntype: epic\n---\n');
+    writeFileSync(join(vault, 'Task root', 'FX-hier2--child.md'), '---\ntitle: Native child\nparent: FX-hier1\n---\n');
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().beans.length === 4`, 'the hierarchy fixture to load');
+    await session.evaluate(`${buttonByText('.obsibeans-workspace .controls', en['view.hierarchy'])}.click()`);
+    const hierarchyIds = `[...document.querySelectorAll('.obsibeans-workspace .rows button.row')].map((row) => row.dataset.id).join()`;
+    await session.waitFor(`${hierarchyIds}.includes('FX-hier1') && !${hierarchyIds}.includes('FX-hier2')`, 'the hierarchy to show the epic closed');
+    const key = async (name: string, code: number): Promise<void> => {
+      for (const type of ['keyDown', 'keyUp']) await session?.send('Input.dispatchKeyEvent', { type, key: name, code: name, windowsVirtualKeyCode: code });
+    };
+    await session.evaluate(`document.querySelector('.obsibeans-workspace button.row[data-id="FX-hier1"]').focus()`);
+    await key('ArrowRight', 39);
+    await session.waitFor(`${hierarchyIds}.includes('FX-hier2')`, 'ArrowRight to open the epic');
+    check(await session.evaluate(`document.querySelector('.obsibeans-workspace li:has([data-id="FX-hier1"]) .progress')?.textContent === '0% complete: 0 completed, 0 scrapped, 1 open'`), 'the epic shows the progress of its leaf');
+    await key('ArrowRight', 39);
+    await session.waitFor(`document.activeElement?.dataset.id === 'FX-hier2'`, 'ArrowRight to enter the child');
+    await key('ArrowLeft', 37);
+    await session.waitFor(`document.activeElement?.dataset.id === 'FX-hier1'`, 'ArrowLeft to return to the parent');
+    await screenshot('hierarchy-dark');
+    await session.evaluate(`(document.body.classList.replace('theme-dark', 'theme-light'), true)`);
+    await screenshot('hierarchy-light');
+    await session.evaluate(`(document.body.classList.replace('theme-light', 'theme-dark'), true)`);
+    await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.contentEl.style.width = '500px'`);
+    await session.waitFor(`!!document.querySelector('.obsibeans-workspace.narrow')`, 'the hierarchy pane to collapse');
+    await session.evaluate(`${buttonByText('.obsibeans-workspace .pane-detail', en['action.back'])}?.click()`);
+    await session.waitFor(`document.querySelector('.obsibeans-workspace .pane-list')?.hidden === false`, 'the hierarchy to show in the narrow pane');
+    await screenshot('hierarchy-narrow');
+    await session.evaluate(`app.workspace.getLeavesOfType('obsibeans-workspace')[0].view.contentEl.style.width = ''`);
+    await session.waitFor(`!document.querySelector('.narrow')`, 'the pane to expand after the hierarchy check');
+    await session.evaluate(`${buttonByText('.obsibeans-workspace .controls', en['view.list'])}.click()`);
+    await session.waitFor(`!!document.querySelector('.obsibeans-workspace ul.rows') && !document.querySelector('.obsibeans-workspace .twisty')`, 'the list to return');
+    unlinkSync(join(vault, 'Task root', 'FX-hier1--epic.md'));
+    unlinkSync(join(vault, 'Task root', 'FX-hier2--child.md'));
+    await session.waitFor(`app.plugins.plugins[${id}].state?.getSnapshot().beans.length === 2`, 'the hierarchy fixture to leave the project');
 
     // Error state: with Beans gone, a refresh keeps the rows under a stale banner, and Refresh in the banner recovers.
     renameSync(fakeBeans, `${fakeBeans}.away`);
